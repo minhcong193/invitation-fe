@@ -870,6 +870,11 @@ a {
 }
 
 @media(max-width:760px) {
+    .hero {
+        min-height: 70vh;
+        min-height: 70svh;
+    }
+
     body {
         font-size: 17px
     }
