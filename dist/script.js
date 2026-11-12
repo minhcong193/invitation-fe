@@ -451,16 +451,24 @@ const wishForm = $('#wishForm');
 const wishList = $('#wishList');
 const wishMarqueeWrapper = $('#wishMarqueeWrapper');
 
-const defaultWishes = [
-  { name: 'Gia đình Bác Thành', message: 'Chúc hai cháu trăm năm hạnh phúc, đầu bạc răng long, gia đình êm ấm thuận hòa!' },
-  { name: 'Hội bạn Đại học', message: 'Chúc mừng Công Minh & Thu Hằng! Chúc hai bạn một hành trình mới ngập tràn tiếng cười và yêu thương.' },
-  { name: 'Cô Mai & Chú Dũng', message: 'Mừng hạnh phúc hai cháu! Chúc hai cháu luôn thương yêu, sẻ chia và cùng nhau vun đắp tổ ấm tương lai.' },
-  { name: 'Đồng nghiệp team Tech', message: 'Chúc chú rể Công Minh và cô dâu Thu Hằng mãi mãi hạnh phúc, sớm đón thiên thần nhỏ nhé!' },
-  { name: 'Bạn Thu Trang', message: 'Cô dâu xinh đẹp nhất trần đời! Chúc Hằng luôn rạng rỡ và hạnh phúc bên người bạn đời tuyệt vời.' },
-  { name: 'Anh Tuấn & Gia đình', message: 'Chúc hai em trăm năm hòa hợp, vạn sự như ý, cùng nhau viết nên câu chuyện hôn nhân thật trọn vẹn!' }
+const defaultWishes = [];
+
+// Xóa bỏ các lời chúc mock cũ nếu từng lưu vào localStorage
+const oldMockKeywords = [
+  'Chúc hai cháu trăm năm hạnh phúc',
+  'Chúc mừng Công Minh & Thu Hằng!',
+  'Mừng hạnh phúc hai cháu!',
+  'Chúc chú rể Công Minh và cô dâu Thu Hằng mãi mãi hạnh phúc',
+  'Cô dâu xinh đẹp nhất trần đời!',
+  'Chúc hai em trăm năm hòa hợp'
 ];
 
-let localWishes = JSON.parse(localStorage.getItem('minh-hang-wishes') || '[]');
+let localWishes = JSON.parse(localStorage.getItem('minh-hang-wishes') || '[]')
+  .filter(item => !oldMockKeywords.some(kw => item.message && item.message.includes(kw)));
+try {
+  localStorage.setItem('minh-hang-wishes', JSON.stringify(localWishes));
+} catch (_) {}
+
 let allWishesList = [];
 
 let scrollPos = 0;
@@ -481,6 +489,15 @@ function renderWishes() {
     if (!uniqueMap.has(key)) uniqueMap.set(key, item);
   });
   allWishesList = Array.from(uniqueMap.values());
+
+  if (allWishesList.length === 0) {
+    const emptyNotice = document.createElement('div');
+    emptyNotice.className = 'wish-empty';
+    emptyNotice.style.cssText = 'text-align: center; color: rgba(255, 255, 255, 0.7); font-style: italic; padding: 24px 16px; font-size: 15px;';
+    emptyNotice.textContent = 'Chưa có lời chúc nào. Hãy là người đầu tiên gửi lời chúc tới Công Minh & Thu Hằng nhé!';
+    wishList.append(emptyNotice);
+    return;
+  }
 
   // Để tạo hiệu ứng cuộn lặp vô tận (infinite loop seamless scroll),
   // nhân bản danh sách ít nhất 2 đến 3 lần để chiều cao vượt trội khung nhìn
@@ -508,6 +525,7 @@ function startAutoScroll() {
   if (animFrameId) cancelAnimationFrame(animFrameId);
 
   function stepScroll() {
+    if (allWishesList.length === 0) return;
     if (!isUserInteracting && wishMarqueeWrapper && wishList) {
       const halfHeight = wishList.scrollHeight / 2;
       if (halfHeight > 0) {

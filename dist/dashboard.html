@@ -5,6 +5,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dashboard Quản Lý & Thống Kê Toàn Diện | Công Minh & Thu Hằng</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="alternate icon" href="/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -433,16 +435,16 @@
             <input type="text" name="fullName" required placeholder="Ví dụ: Nguyễn Văn Tuấn">
           </div>
           <div class="form-group">
-            <label>Mã mời (Invite Code) *</label>
-            <input type="text" name="inviteCode" required placeholder="Ví dụ: tuan-anh-2026">
-            <small style="color:#64748b; font-size:11px;">Mã định danh duy nhất trên URL (viết liền không dấu, gạch nối)</small>
-          </div>
-          <div class="form-group">
             <label>Khách của ai *</label>
             <select name="guestSide" required>
               <option value="groom">Nhà trai (Chú rể)</option>
               <option value="bride">Nhà gái (Cô dâu)</option>
             </select>
+          </div>
+          <div class="form-group">
+            <label>Mối quan hệ / Lời nhắn (message)</label>
+            <input type="text" name="message" placeholder="Ví dụ: Bạn cấp 3 của chú rể">
+            <small style="color:#64748b; font-size:11px;">Ghi chú mối quan hệ (dùng để hiển thị trong nội dung chuyển khoản mừng cưới)</small>
           </div>
         </div>
         <div class="modal-footer">
@@ -477,6 +479,10 @@
               <option value="groom">Nhà trai (Chú rể)</option>
               <option value="bride">Nhà gái (Cô dâu)</option>
             </select>
+          </div>
+          <div class="form-group">
+            <label>Mối quan hệ / Lời nhắn (message)</label>
+            <input type="text" name="message" id="editGuestMessage" placeholder="Ví dụ: Bạn cấp 3 của chú rể">
           </div>
           <div class="form-group">
             <label>Trạng thái phản hồi RSVP</label>

@@ -220,7 +220,8 @@ function renderGuestsTable() {
     if (searchKeyword) {
       const matchName = (g.fullName || '').toLowerCase().includes(searchKeyword);
       const matchCode = (g.inviteCode || '').toLowerCase().includes(searchKeyword);
-      if (!matchName && !matchCode) return false;
+      const matchMessage = (g.message || '').toLowerCase().includes(searchKeyword);
+      if (!matchName && !matchCode && !matchMessage) return false;
     }
     if (sideFilter !== 'all' && g.guestSide !== sideFilter) return false;
     if (rsvpFilter === 'attending' && g.rsvpStatus !== 'attending' && g.rsvpStatus !== 'ATTENDING') return false;
@@ -269,7 +270,10 @@ function renderGuestsTable() {
     return `
       <tr>
         <td><b>#${g.id}</b></td>
-        <td><strong>${g.fullName || '—'}</strong></td>
+        <td>
+          <strong>${g.fullName || '—'}</strong>
+          ${g.message ? `<div style="font-size:11px; color:#64748b; margin-top:2px;">💬 ${g.message}</div>` : ''}
+        </td>
         <td><code>${g.inviteCode || '—'}</code></td>
         <td>${sideBadge}</td>
         <td>${rsvpBadge}</td>
@@ -304,6 +308,7 @@ async function openEditGuestModal(id) {
   $('#editGuestCode').value = guest.inviteCode || '';
   $('#editGuestFullName').value = guest.fullName || '';
   $('#editGuestSide').value = guest.guestSide || 'groom';
+  if ($('#editGuestMessage')) $('#editGuestMessage').value = guest.message || '';
   $('#editGuestRsvp').value = guest.rsvpStatus || '';
   $('#editGuestIsActive').checked = guest.isActive !== false;
 
@@ -631,8 +636,8 @@ $('#formAddGuest')?.addEventListener('submit', async (e) => {
   const formData = new FormData(e.currentTarget);
   const payload = {
     fullName: formData.get('fullName').trim(),
-    inviteCode: formData.get('inviteCode').trim(),
-    guestSide: formData.get('guestSide')
+    guestSide: formData.get('guestSide'),
+    message: formData.get('message') ? formData.get('message').trim() : ''
   };
 
   const btn = $('#btnSubmitAddGuest');
@@ -653,7 +658,7 @@ $('#formAddGuest')?.addEventListener('submit', async (e) => {
     e.currentTarget.reset();
     loadAllData();
   } else {
-    alert(res?.message || 'Lỗi khi tạo khách mời. Vui lòng kiểm tra mã mời có bị trùng không.');
+    alert(res?.message || 'Lỗi khi tạo khách mời.');
   }
 });
 
@@ -665,6 +670,7 @@ $('#formEditGuest')?.addEventListener('submit', async (e) => {
   const payload = {
     fullName: formData.get('fullName').trim(),
     guestSide: formData.get('guestSide'),
+    message: formData.get('message') ? formData.get('message').trim() : '',
     rsvpStatus: formData.get('rsvpStatus') || null,
     isActive: formData.get('isActive') === 'on'
   };

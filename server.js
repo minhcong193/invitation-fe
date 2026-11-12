@@ -72,6 +72,12 @@ app.get('/dashboard', (req, res) => {
   res.sendFile(dashboardFile);
 });
 
+// Favicon icon trái tim cho tab trình duyệt
+app.get(['/favicon.ico', '/favicon.svg'], (req, res) => {
+  res.type('image/svg+xml');
+  res.sendFile(path.join(distDir, 'favicon.svg'));
+});
+
 // Phục vụ toàn bộ file tĩnh (CSS, JS, ảnh, fonts...)
 app.use(express.static(distDir, { index: false }));
 
