@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="vi">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#4f603c">
+  <meta name="description" content="Thiệp cưới của Công Minh và Thu Hằng — 28 & 29.11.2026">
+  <title>Công Minh & Thu Hằng | Wedding Greeting</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Allura&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Montserrat:wght@400;500;600&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+
+<body class="greeting-page">
+  <!-- Nút Bật / Tắt Nhạc Nền -->
+  <button class="sound" id="soundToggle" aria-label="Bật hoặc tắt nhạc" title="Nhạc nền">
+    <span class="sound__bars" aria-hidden="true"><i></i><i></i><i></i></span>
+  </button>
+  <audio id="music" loop preload="auto"
+    src="https://jejuwedding.vn/thiep-cuoi/wp-content/uploads/2024/10/Shane-Filan-Beautiful-In-White.mp3"></audio>
+
+  <main class="greeting-wrapper">
+    <!-- Khung thiệp chào chính (Chỉ chứa màn chào, không có nút mở thiệp che phủ) -->
+    <div class="greeting-card">
+      <p class="eyebrow light" id="greetingEyebrow">Trân trọng kính mời</p>
+      <p class="guest" id="guestName">Quý khách</p>
+      <p class="opening__copy" id="greetingCopy">tới chung vui trong ngày trọng đại của</p>
+      <h1 id="openingTitle"><span>Công Minh</span><i>&</i><span>Thu Hằng</span></h1>
+      <p class="date-line" id="openingDate">28 · 11 · 2026</p>
+
+      <!-- Bộ đếm ngược thời gian diễn ra sự kiện -->
+      <div class="greeting-countdown">
+        <p class="eyebrow light" style="margin-bottom: 12px; letter-spacing: 0.2em;">Đếm ngược đến ngày chung đôi</p>
+        <div class="timer" id="countdown">
+          <div><b id="days">00</b><span>Ngày</span></div>
+          <div><b id="hours">00</b><span>Giờ</span></div>
+          <div><b id="minutes">00</b><span>Phút</span></div>
+          <div><b id="seconds">00</b><span>Giây</span></div>
+        </div>
+      </div>
+
+      <!-- Thẻ sự kiện cưới (event-card) -->
+      <div class="greeting-events-grid">
+        <article class="event-card">
+          <span class="event-card__no">01</span>
+          <p class="eyebrow">Lễ thành hôn · Nhà trai</p>
+          <h3>15:30</h3>
+          <p class="event-card__date">Thứ Bảy, 28 tháng 11 năm 2026</p>
+          <div class="event-card__rule"></div>
+          <b>Trung tâm tiệc cưới Minh Hoàng</b>
+          <p>Hòa Bình, Phú Bình, Thái Nguyên</p>
+          <a class="btn btn--outline"
+            href="https://www.google.com/maps/search/?api=1&query=Trung+tâm+tiệc+cưới+Minh+Hoàng+Phú+Bình+Thái+Nguyên"
+            target="_blank" rel="noopener">Xem bản đồ</a>
+        </article>
+
+        <article class="event-card">
+          <span class="event-card__no">02</span>
+          <p class="eyebrow">Lễ thành hôn · Nhà gái</p>
+          <h3>10:00</h3>
+          <p class="event-card__date">Chủ Nhật, 29 tháng 11 năm 2026</p>
+          <div class="event-card__rule"></div>
+          <b>Trống Đồng Palace</b>
+          <p>586 Cách Mạng Tháng Tám, Gia Sàng, Thái Nguyên</p>
+          <a class="btn btn--outline"
+            href="https://www.google.com/maps/search/?api=1&query=Trống+Đồng+Palace+586+Cách+Mạng+Tháng+Tám+Thái+Nguyên"
+            target="_blank" rel="noopener">Xem bản đồ</a>
+        </article>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    // 1. Lấy tên khách từ query param (?to= hoặc ?guest=)
+    const params = new URLSearchParams(window.location.search);
+    const guestParam = params.get('to') || params.get('guest');
+    if (guestParam) {
+      document.getElementById('guestName').textContent = guestParam.slice(0, 60);
+    }
+
+    // 2. Nhạc nền & Nút bật/tắt
+    const music = document.getElementById('music');
+    const soundToggle = document.getElementById('soundToggle');
+    let hasInteracted = false;
+
+    async function playMusic() {
+      if (!music) return;
+      try {
+        await music.play();
+        soundToggle.classList.add('playing');
+        soundToggle.setAttribute('aria-label', 'Tắt nhạc');
+      } catch (_) {
+        soundToggle.classList.remove('playing');
+      }
+    }
+
+    function pauseMusic() {
+      if (!music) return;
+      music.pause();
+      soundToggle.classList.remove('playing');
+      soundToggle.setAttribute('aria-label', 'Bật nhạc');
+    }
+
+    soundToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (music.paused) {
+        playMusic();
+      } else {
+        pauseMusic();
+      }
+    });
+
+    // Tự động phát nhạc khi người dùng tương tác / click bất kỳ đâu vào trang
+    document.addEventListener('click', () => {
+      if (!hasInteracted) {
+        hasInteracted = true;
+        if (music && music.paused) {
+          playMusic();
+        }
+      }
+    }, { once: true });
+
+    // 3. Đếm ngược thời gian diễn ra sự kiện (28.11.2026 15:30)
+    const weddingDate = new Date('2026-11-28T15:30:00+07:00');
+    function updateCountdown() {
+      const now = new Date();
+      const diff = Math.max(0, weddingDate - now);
+      const days = Math.floor(diff / 86400000);
+      const hours = Math.floor(diff / 3600000) % 24;
+      const minutes = Math.floor(diff / 60000) % 60;
+      const seconds = Math.floor(diff / 1000) % 60;
+
+      document.getElementById('days').textContent = String(days).padStart(2, '0');
+      document.getElementById('hours').textContent = String(hours).padStart(2, '0');
+      document.getElementById('minutes').textContent = String(minutes).padStart(2, '0');
+      document.getElementById('seconds').textContent = String(seconds).padStart(2, '0');
+    }
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+
+    // 4. Nhận diện danh xưng chung trên URL (/greeting/em, /greeting/bac, /greeting/gia-dinh-bac, ...) hoặc ?for=...
+    const salutationMap = {
+      'em': { title: 'Em', eyebrow: 'Trân trọng kính mời', copy: 'tới chung vui trong ngày trọng đại của hai gia đình chúng tôi' },
+      'anh': { title: 'Anh', eyebrow: 'Trân trọng kính mời', copy: 'tới chung vui trong ngày trọng đại của hai gia đình chúng tôi' },
+      'chi': { title: 'Chị', eyebrow: 'Trân trọng kính mời', copy: 'tới chung vui trong ngày trọng đại của hai gia đình chúng tôi' },
+      'co': { title: 'Cô', eyebrow: 'Trân trọng kính mời', copy: 'tới chung vui trong ngày trọng đại của hai gia đình chúng tôi' },
+      'chu': { title: 'Chú', eyebrow: 'Trân trọng kính mời', copy: 'tới chung vui trong ngày trọng đại của hai gia đình chúng tôi' },
+      'bac': { title: 'Bác', eyebrow: 'Trân trọng kính mời', copy: 'tới chung vui trong ngày trọng đại của hai gia đình chúng tôi' },
+      'chau': { title: 'Cháu', eyebrow: 'Trân trọng kính mời', copy: 'tới chung vui trong ngày trọng đại của hai gia đình chúng tôi' },
+      'gia-dinh-em': { title: 'Gia đình Em', eyebrow: 'Trân trọng kính mời', copy: 'tới chung vui trong ngày trọng đại của hai gia đình chúng tôi' },
+      'gia-dinh-anh': { title: 'Gia đình Anh', eyebrow: 'Trân trọng kính mời', copy: 'tới chung vui trong ngày trọng đại của hai gia đình chúng tôi' },
+      'gia-dinh-chi': { title: 'Gia đình Chị', eyebrow: 'Trân trọng kính mời', copy: 'tới chung vui trong ngày trọng đại của hai gia đình chúng tôi' },
+      'gia-dinh-co': { title: 'Gia đình Cô', eyebrow: 'Trân trọng kính mời', copy: 'tới chung vui trong ngày trọng đại của hai gia đình chúng tôi' },
+      'gia-dinh-chu': { title: 'Gia đình Chú', eyebrow: 'Trân trọng kính mời', copy: 'tới chung vui trong ngày trọng đại của hai gia đình chúng tôi' },
+      'gia-dinh-bac': { title: 'Gia đình Bác', eyebrow: 'Trân trọng kính mời', copy: 'tới chung vui trong ngày trọng đại của hai gia đình chúng tôi' }
+    };
+
+    const segments = window.location.pathname.split('/').filter(Boolean);
+    const urlParams = new URLSearchParams(window.location.search);
+    let targetKey = urlParams.get('for') || urlParams.get('salutation');
+    if (!targetKey && segments.length > 1 && segments[0] === 'greeting') {
+      targetKey = segments[1];
+    }
+    if (targetKey) {
+      const cleanKey = targetKey.toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/đ/g, 'd')
+        .replace(/[^a-z0-9]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+      const item = salutationMap[cleanKey];
+      if (item) {
+        let name = item.title;
+        const customName = urlParams.get('name');
+        if (customName) {
+          name = customName.toLowerCase().startsWith(item.title.toLowerCase()) ? customName : `${item.title} ${customName}`;
+        }
+        document.getElementById('greetingEyebrow').textContent = item.eyebrow;
+        document.getElementById('guestName').textContent = name;
+        document.getElementById('greetingCopy').textContent = item.copy;
+      }
+    }
+  </script>
+</body>
+
+</html>
+

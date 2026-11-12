@@ -1,0 +1,705 @@
+<!doctype html>
+<html lang="vi">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard Quản Lý & Thống Kê Toàn Diện | Công Minh & Thu Hằng</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,400&family=Montserrat:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="/dashboard.css">
+</head>
+
+<body>
+  <!-- Header -->
+  <header class="dash-header">
+    <div class="dash-header__wrap">
+      <div class="dash-brand">
+        <div class="dash-brand__logo">💍</div>
+        <div class="dash-brand__title">
+          <h1>Công Minh & Thu Hằng</h1>
+          <p>Hệ Thống Thống Kê & Quản Lý Thiệp Cưới (Tất cả Entity API)</p>
+        </div>
+      </div>
+
+      <div class="dash-actions">
+        <span class="status-indicator" id="backendStatus">
+          <span class="status-dot online" id="statusDot"></span>
+          <span id="statusText">Backend :8088</span>
+        </span>
+        <a href="/chu-re" target="_blank" class="btn btn-outline btn-sm">
+          <span>👔 Thiệp Nhà Trai</span>
+        </a>
+        <a href="/co-dau" target="_blank" class="btn btn-outline btn-sm">
+          <span>👰 Thiệp Nhà Gái</span>
+        </a>
+        <button class="btn btn-outline btn-sm" id="btnExportAllHeader" title="Xuất đồng thời cả 2 danh sách trong 1 file Excel (2 sheet riêng biệt: Khách mời & Nhóm gia đình)">
+          <span>📑 Xuất Toàn Bộ Excel</span>
+        </button>
+        <button class="btn btn-outline btn-sm" onclick="window.print()" title="In danh sách hoặc xuất PDF">
+          <span>🖨️ In báo cáo</span>
+        </button>
+        <button class="btn btn-primary btn-sm" id="btnRefresh">
+          <span id="refreshIcon">🔄</span> Làm mới
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="dash-container">
+    <!-- Stat Cards (KPIs) -->
+    <section class="stat-grid">
+      <!-- Total Expected Guests -->
+      <div class="stat-card stat-card--success">
+        <div class="stat-card__header">
+          <span class="stat-card__title">Tổng khách dự kiến toàn tiệc</span>
+          <span class="stat-card__icon">🎉</span>
+        </div>
+        <div class="stat-card__value" id="kpiTotalExpected">0</div>
+        <div class="stat-card__sub">
+          <span>Gồm cá nhân tham dự & họ hàng dự kiến</span>
+        </div>
+      </div>
+
+      <!-- Individual Guests -->
+      <div class="stat-card stat-card--info">
+        <div class="stat-card__header">
+          <span class="stat-card__title">Khách mời cá nhân (/guests)</span>
+          <span class="stat-card__icon">✉️</span>
+        </div>
+        <div class="stat-card__value" id="kpiTotalGuests">0</div>
+        <div class="stat-card__sub" id="kpiGuestsSub">
+          <span>Nhà trai: 0</span> · <span>Nhà gái: 0</span>
+        </div>
+      </div>
+
+      <!-- RSVP Status -->
+      <div class="stat-card stat-card--gold">
+        <div class="stat-card__header">
+          <span class="stat-card__title">Tình trạng RSVP cá nhân</span>
+          <span class="stat-card__icon">📊</span>
+        </div>
+        <div class="stat-card__value" id="kpiRsvpAttending">0</div>
+        <div class="stat-card__sub" id="kpiRsvpSub">
+          <span class="badge-tag" style="background:#dcfce7; color:#16a34a;">0 Tham dự</span>
+          <span class="badge-tag" style="background:#fee2e2; color:#dc2626;">0 Báo bận</span>
+          <span class="badge-tag" style="background:#f1f5f9; color:#64748b;">0 Chưa phản hồi</span>
+        </div>
+      </div>
+
+      <!-- Family Groups -->
+      <div class="stat-card stat-card--warning">
+        <div class="stat-card__header">
+          <span class="stat-card__title">Nhóm họ hàng (/family-groups)</span>
+          <span class="stat-card__icon">👨‍👩‍👧‍👦</span>
+        </div>
+        <div class="stat-card__value" id="kpiFamilyGroups">0</div>
+        <div class="stat-card__sub" id="kpiFamilySub">
+          <span>Dự kiến: <b id="kpiFamilyCount">0</b> người</span>
+        </div>
+      </div>
+
+      <!-- Guestbook -->
+      <div class="stat-card stat-card--purple">
+        <div class="stat-card__header">
+          <span class="stat-card__title">Sổ lưu bút (/guestbook)</span>
+          <span class="stat-card__icon">💌</span>
+        </div>
+        <div class="stat-card__value" id="kpiGuestbook">0</div>
+        <div class="stat-card__sub" id="kpiGuestbookSub">
+          <span>0 đã duyệt</span> · <span>0 chờ duyệt</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Visual Analytics Row -->
+    <section class="analytics-row">
+      <div class="analytics-card">
+        <div class="analytics-card__title">
+          <span>📈 Tỷ lệ phản hồi RSVP (Cá nhân)</span>
+          <span id="responseRateBadge" class="badge badge-neutral">0% phản hồi</span>
+        </div>
+        <div class="progress-bar-group">
+          <div class="progress-item">
+            <div class="progress-item__label">
+              <span>Tham dự</span>
+              <span id="progAttendingText">0 (0%)</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" id="progAttendingFill" style="width: 0%; background: #16a34a;"></div>
+            </div>
+          </div>
+          <div class="progress-item">
+            <div class="progress-item__label">
+              <span>Báo bận</span>
+              <span id="progDeclinedText">0 (0%)</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" id="progDeclinedFill" style="width: 0%; background: #dc2626;"></div>
+            </div>
+          </div>
+          <div class="progress-item">
+            <div class="progress-item__label">
+              <span>Chưa phản hồi</span>
+              <span id="progPendingText">0 (0%)</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" id="progPendingFill" style="width: 0%; background: #94a3b8;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="analytics-card">
+        <div class="analytics-card__title">
+          <span>⚖️ Phân bổ khách toàn tiệc (Nhà trai vs Nhà gái)</span>
+          <span id="sideRatioBadge" class="badge badge-neutral">50% / 50%</span>
+        </div>
+        <div class="progress-bar-group">
+          <div class="progress-item">
+            <div class="progress-item__label">
+              <span>👔 Phía Nhà trai (Groom)</span>
+              <span id="progGroomTotalText">0 người</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" id="progGroomFill" style="width: 50%; background: #0284c7;"></div>
+            </div>
+          </div>
+          <div class="progress-item">
+            <div class="progress-item__label">
+              <span>👰 Phía Nhà gái (Bride)</span>
+              <span id="progBrideTotalText">0 người</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" id="progBrideFill" style="width: 50%; background: #db2777;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Content Sections with Tabs -->
+    <div class="content-card">
+      <!-- Tabs Navigation -->
+      <nav class="tab-nav">
+        <button class="tab-btn active" data-tab="tabGuests">
+          <span>✉️ Khách mời cá nhân (Invited Guests)</span>
+          <span class="tab-badge" id="badgeGuestsCount">0</span>
+        </button>
+        <button class="tab-btn" data-tab="tabFamily">
+          <span>👨‍👩‍👧‍👦 Nhóm họ hàng & Gia đình (Family Groups)</span>
+          <span class="tab-badge" id="badgeFamilyCount">0</span>
+        </button>
+        <button class="tab-btn" data-tab="tabGuestbook">
+          <span>💌 Sổ lưu bút (Guestbook Messages)</span>
+          <span class="tab-badge" id="badgeGuestbookCount">0</span>
+        </button>
+        <button class="tab-btn" data-tab="tabTables">
+          <span>🍽️ Bàn tiệc & Xếp chỗ (Seating)</span>
+          <span class="tab-badge" id="badgeTablesCount">0</span>
+        </button>
+        <button class="tab-btn" data-tab="tabSalutations">
+          <span>💌 Link Mời Theo Danh Xưng (Bác, Chú, Cô, Anh, Chị, Em, Gia đình...)</span>
+          <span class="tab-badge" style="background:#8b5cf6;">13</span>
+        </button>
+      </nav>
+
+      <!-- TAB 1: KHÁCH MỜI CÁ NHÂN (/api/v1/guests) -->
+      <section class="tab-pane active" id="tabGuests">
+        <div class="toolbar">
+          <div class="toolbar__left">
+            <input type="text" class="search-input" id="searchGuests" placeholder="Tìm theo tên hoặc mã thiệp mời...">
+            <select class="filter-select" id="filterGuestSide">
+              <option value="all">Tất cả các bên</option>
+              <option value="groom">Nhà trai (Groom)</option>
+              <option value="bride">Nhà gái (Bride)</option>
+            </select>
+            <select class="filter-select" id="filterGuestRsvp">
+              <option value="all">Tất cả RSVP</option>
+              <option value="attending">Đã xác nhận: Tham dự</option>
+              <option value="declined">Đã báo: Bận / Tiếc quá</option>
+              <option value="pending">Chưa phản hồi (Null)</option>
+            </select>
+            <select class="filter-select" id="filterGuestActive">
+              <option value="all">Tất cả trạng thái</option>
+              <option value="true">Đang kích hoạt</option>
+              <option value="false">Đã vô hiệu hóa</option>
+            </select>
+          </div>
+          <div class="toolbar__right">
+            <button class="btn btn-outline" id="btnExportGuests" title="Xuất danh sách khách mời cá nhân ra Excel theo bộ lọc hiện tại">
+              <span>📊</span> Xuất Excel
+            </button>
+            <a href="/api/backend/api/v1/guests/excel-template" download="guest_import_template.xlsx" class="btn btn-outline" id="btnDownloadGuestTemplate" title="Tải file mẫu Excel chuẩn để nhập dữ liệu">
+              <span>📥</span> File mẫu Excel
+            </a>
+            <button class="btn btn-outline" id="btnOpenImportGuestModal">
+              <span>📤</span> Import Excel
+            </button>
+            <button class="btn btn-primary" id="btnOpenAddGuestModal">
+              <span>+</span> Thêm khách mời
+            </button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Họ và tên</th>
+                <th>Mã mời (Invite Code)</th>
+                <th>Phía</th>
+                <th>Trạng thái RSVP</th>
+                <th>Kích hoạt</th>
+                <th>Thời điểm phản hồi</th>
+                <th>Link thiệp cá nhân</th>
+                <th style="text-align: right;">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="guestsTableBody">
+              <!-- Render dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB 2: NHÓM HỌ HÀNG & GIA ĐÌNH (/api/v1/family-groups) -->
+      <section class="tab-pane" id="tabFamily">
+        <div class="toolbar">
+          <div class="toolbar__left">
+            <input type="text" class="search-input" id="searchFamily" placeholder="Tìm theo tên nhóm gia đình...">
+            <select class="filter-select" id="filterFamilySide">
+              <option value="all">Tất cả các bên</option>
+              <option value="groom">Nhà trai</option>
+              <option value="bride">Nhà gái</option>
+            </select>
+            <select class="filter-select" id="filterFamilyActive">
+              <option value="all">Tất cả trạng thái</option>
+              <option value="true">Đang kích hoạt</option>
+              <option value="false">Đã vô hiệu hóa</option>
+            </select>
+            <input type="text" class="search-input" id="filterFamilyTable" style="max-width: 140px;" placeholder="Lọc số bàn...">
+          </div>
+          <div class="toolbar__right">
+            <button class="btn btn-outline" id="btnExportFamily" title="Xuất danh sách nhóm khách gia đình / họ hàng ra Excel theo bộ lọc hiện tại">
+              <span>📊</span> Xuất Excel
+            </button>
+            <a href="/api/backend/api/v1/family-groups/excel-template" download="family_group_import_template.xlsx" class="btn btn-outline" id="btnDownloadFamilyTemplate" title="Tải file mẫu Excel chuẩn để nhập dữ liệu">
+              <span>📥</span> File mẫu Excel
+            </a>
+            <button class="btn btn-outline" id="btnOpenImportFamilyModal">
+              <span>📤</span> Import Excel
+            </button>
+            <button class="btn btn-primary" id="btnOpenAddFamilyModal">
+              <span>+</span> Thêm nhóm họ hàng
+            </button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Tên nhóm gia đình</th>
+                <th>Phía</th>
+                <th>Mối quan hệ</th>
+                <th>Số lượng dự kiến</th>
+                <th>Vị trí bàn tiệc</th>
+                <th>Trạng thái</th>
+                <th>Ghi chú</th>
+                <th>Link thiệp gia đình</th>
+                <th style="text-align: right;">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="familyTableBody">
+              <!-- Render dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB 3: SỔ LƯU BÚT (/api/v1/guestbook) -->
+      <section class="tab-pane" id="tabGuestbook">
+        <div class="toolbar">
+          <div class="toolbar__left">
+            <select class="filter-select" id="filterGuestbookStatus">
+              <option value="all">Tất cả trạng thái duyệt</option>
+              <option value="PENDING">Chờ duyệt (Pending)</option>
+              <option value="APPROVED">Đã duyệt (Approved)</option>
+              <option value="REJECTED">Đã từ chối (Rejected)</option>
+            </select>
+          </div>
+          <div class="toolbar__right">
+            <button class="btn btn-outline" id="btnOpenAddWishModal">
+              <span>✏️</span> Viết lời chúc mới
+            </button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Người gửi</th>
+                <th>Mã thiệp liên kết</th>
+                <th>Nội dung lời chúc</th>
+                <th>Trạng thái duyệt</th>
+                <th>Thời gian gửi</th>
+                <th style="text-align: right;">Hành động</th>
+              </tr>
+            </thead>
+            <tbody id="guestbookTableBody">
+              <!-- Render dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB 4: BÀN TIỆC & XẾP CHỖ (SEATING OVERVIEW) -->
+      <section class="tab-pane" id="tabTables">
+        <div class="toolbar">
+          <p style="font-size:14px; color:#475569;">
+            Tổng hợp danh sách các bàn tiệc và các nhóm họ hàng được xếp theo bàn:
+          </p>
+        </div>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Bàn số</th>
+                <th>Các nhóm gia đình ngồi tại bàn</th>
+                <th>Phía</th>
+                <th>Tổng số khách tại bàn</th>
+              </tr>
+            </thead>
+            <tbody id="tablesSummaryBody">
+              <!-- Render dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB 5: LINK MỜI CHUNG THEO DANH XƯNG (EM, ANH, CHỊ, CÔ, CHÚ, BÁC, GIA ĐÌNH...) -->
+      <section class="tab-pane" id="tabSalutations">
+        <div class="toolbar" style="margin-bottom:16px;">
+          <p style="font-size:14px; color:#475569; margin:0;">
+            Danh sách 13 đường dẫn thiệp cưới mời theo danh xưng chung để gửi qua Zalo, Messenger, SMS cho từng đối tượng (có thể thêm <code>?name=Tên</code> để thêm tên riêng):
+          </p>
+        </div>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Đối tượng / Danh xưng</th>
+                <th>Lời xưng hô</th>
+                <th>Thiệp Nhà Trai (/chu-re)</th>
+                <th>Thiệp Nhà Gái (/co-dau)</th>
+                <th>Màn Chào (/greeting)</th>
+              </tr>
+            </thead>
+            <tbody id="salutationsTableBody">
+              <!-- Render dynamically in dashboard.js -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- MODALS -->
+  <!-- ========================================================================= -->
+
+  <!-- Modal 1: Thêm Khách Mời Cá Nhân (POST /api/v1/guests) -->
+  <div class="modal" id="modalAddGuest">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Thêm Khách Mời Cá Nhân (POST /guests)</h3>
+        <button class="modal-close" data-close="modalAddGuest">&times;</button>
+      </div>
+      <form id="formAddGuest">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Họ và tên khách mời *</label>
+            <input type="text" name="fullName" required placeholder="Ví dụ: Nguyễn Văn Tuấn">
+          </div>
+          <div class="form-group">
+            <label>Mã mời (Invite Code) *</label>
+            <input type="text" name="inviteCode" required placeholder="Ví dụ: tuan-anh-2026">
+            <small style="color:#64748b; font-size:11px;">Mã định danh duy nhất trên URL (viết liền không dấu, gạch nối)</small>
+          </div>
+          <div class="form-group">
+            <label>Khách của ai *</label>
+            <select name="guestSide" required>
+              <option value="groom">Nhà trai (Chú rể)</option>
+              <option value="bride">Nhà gái (Cô dâu)</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" data-close="modalAddGuest">Hủy</button>
+          <button type="submit" class="btn btn-primary" id="btnSubmitAddGuest">Tạo khách mời</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 2: Sửa Khách Mời Cá Nhân (PUT /api/v1/guests/{id}) -->
+  <div class="modal" id="modalEditGuest">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Sửa Khách Mời (PUT /guests/{id})</h3>
+        <button class="modal-close" data-close="modalEditGuest">&times;</button>
+      </div>
+      <form id="formEditGuest">
+        <input type="hidden" name="id" id="editGuestId">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Mã mời (Invite Code - cố định)</label>
+            <input type="text" id="editGuestCode" disabled style="background:#f1f5f9; color:#64748b;">
+          </div>
+          <div class="form-group">
+            <label>Họ và tên khách mời *</label>
+            <input type="text" name="fullName" id="editGuestFullName" required>
+          </div>
+          <div class="form-group">
+            <label>Khách của ai *</label>
+            <select name="guestSide" id="editGuestSide" required>
+              <option value="groom">Nhà trai (Chú rể)</option>
+              <option value="bride">Nhà gái (Cô dâu)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Trạng thái phản hồi RSVP</label>
+            <select name="rsvpStatus" id="editGuestRsvp">
+              <option value="">Chưa phản hồi (null)</option>
+              <option value="attending">✓ Tham dự (attending)</option>
+              <option value="declined">✕ Báo bận (declined)</option>
+            </select>
+          </div>
+          <div class="form-group-checkbox">
+            <input type="checkbox" name="isActive" id="editGuestIsActive">
+            <label for="editGuestIsActive" style="text-transform:none; font-size:13px; font-weight:500;">
+              Kích hoạt thiệp (isActive)
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" data-close="modalEditGuest">Hủy</button>
+          <button type="submit" class="btn btn-primary" id="btnSubmitEditGuest">Lưu thay đổi</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 3: Thêm Nhóm Gia Đình (POST /api/v1/family-groups) -->
+  <div class="modal" id="modalAddFamily">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Thêm Nhóm Họ Hàng & Gia Đình (POST /family-groups)</h3>
+        <button class="modal-close" data-close="modalAddFamily">&times;</button>
+      </div>
+      <form id="formAddFamily">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Tên nhóm gia đình *</label>
+            <input type="text" name="groupName" required placeholder="Ví dụ: Gia đình Bác Thành">
+          </div>
+          <div class="form-group">
+            <label>Phía họ hàng *</label>
+            <select name="guestSide" required>
+              <option value="groom">Nhà trai</option>
+              <option value="bride">Nhà gái</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Mối quan hệ họ hàng</label>
+            <input type="text" name="relationship" placeholder="Ví dụ: Bác ruột chú rể">
+          </div>
+          <div class="form-group">
+            <label>Số lượng khách dự kiến</label>
+            <input type="number" name="expectedGuestCount" min="1" max="100" value="2">
+          </div>
+          <div class="form-group">
+            <label>Vị trí bàn tiệc</label>
+            <input type="text" name="tableNumber" placeholder="Ví dụ: Bàn số 05">
+          </div>
+          <div class="form-group">
+            <label>Ghi chú</label>
+            <textarea name="note" rows="2" placeholder="Ghi chú thêm..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" data-close="modalAddFamily">Hủy</button>
+          <button type="submit" class="btn btn-primary" id="btnSubmitAddFamily">Tạo nhóm gia đình</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 4: Sửa Nhóm Gia Đình (PUT /api/v1/family-groups/{id}) -->
+  <div class="modal" id="modalEditFamily">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Sửa Nhóm Gia Đình (PUT /family-groups/{id})</h3>
+        <button class="modal-close" data-close="modalEditFamily">&times;</button>
+      </div>
+      <form id="formEditFamily">
+        <input type="hidden" name="id" id="editFamilyId">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Tên nhóm gia đình *</label>
+            <input type="text" name="groupName" id="editFamilyName" required>
+          </div>
+          <div class="form-group">
+            <label>Phía họ hàng *</label>
+            <select name="guestSide" id="editFamilySide" required>
+              <option value="groom">Nhà trai</option>
+              <option value="bride">Nhà gái</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Mối quan hệ họ hàng</label>
+            <input type="text" name="relationship" id="editFamilyRel">
+          </div>
+          <div class="form-group">
+            <label>Số lượng khách dự kiến</label>
+            <input type="number" name="expectedGuestCount" id="editFamilyCount" min="1" max="100" value="2">
+          </div>
+          <div class="form-group">
+            <label>Vị trí bàn tiệc</label>
+            <input type="text" name="tableNumber" id="editFamilyTable">
+          </div>
+          <div class="form-group">
+            <label>Ghi chú</label>
+            <textarea name="note" id="editFamilyNote" rows="2"></textarea>
+          </div>
+          <div class="form-group-checkbox">
+            <input type="checkbox" name="isActive" id="editFamilyIsActive">
+            <label for="editFamilyIsActive" style="text-transform:none; font-size:13px; font-weight:500;">
+              Kích hoạt nhóm (isActive)
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" data-close="modalEditFamily">Hủy</button>
+          <button type="submit" class="btn btn-primary" id="btnSubmitEditFamily">Lưu thay đổi</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 5: Thêm Lời Chúc (POST /api/v1/guestbook) -->
+  <div class="modal" id="modalAddWish">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Gửi Lời Chúc Mới (POST /guestbook)</h3>
+        <button class="modal-close" data-close="modalAddWish">&times;</button>
+      </div>
+      <form id="formAddWish">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Tên người chúc *</label>
+            <input type="text" name="displayName" required placeholder="Ví dụ: Bạn Nam">
+          </div>
+          <div class="form-group">
+            <label>Mã mời liên kết (Invite Code - tùy chọn)</label>
+            <input type="text" name="inviteCode" placeholder="Ví dụ: minh-tuan-2026">
+          </div>
+          <div class="form-group">
+            <label>Nội dung lời chúc mừng *</label>
+            <textarea name="message" required rows="3" placeholder="Viết lời chúc..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" data-close="modalAddWish">Hủy</button>
+          <button type="submit" class="btn btn-primary" id="btnSubmitAddWish">Gửi lời chúc</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 6: Import Khách Mời Từ Excel (POST /api/v1/guests/import) -->
+  <div class="modal" id="modalImportGuest">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Import Khách Mời Từ Excel (POST /guests/import)</h3>
+        <button class="modal-close" data-close="modalImportGuest">&times;</button>
+      </div>
+      <form id="formImportGuest">
+        <div class="modal-body">
+          <p style="font-size: 13px; color: #475569;">
+            Tải lên file Excel (.xlsx hoặc .xls) danh sách khách mời theo đúng mẫu template.
+          </p>
+          <div style="display:flex; justify-content: flex-end; margin-bottom: 8px;">
+            <a href="/api/backend/api/v1/guests/excel-template" download="guest_import_template.xlsx" class="link-btn">
+              📥 Tải file mẫu guest_import_template.xlsx
+            </a>
+          </div>
+          <label class="upload-dropzone" id="dropzoneGuest">
+            <input type="file" id="fileGuestInput" accept=".xlsx, .xls" required>
+            <div class="upload-dropzone__icon">📄</div>
+            <div class="upload-dropzone__text">Bấm vào đây để chọn file Excel hoặc kéo thả file vào</div>
+            <div class="upload-dropzone__sub">Hỗ trợ định dạng .xlsx, .xls (tối đa 10MB)</div>
+          </label>
+          <div class="upload-file-selected" id="guestSelectedFileName"></div>
+          <div class="import-result-card" id="guestImportResult"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" data-close="modalImportGuest">Đóng</button>
+          <button type="submit" class="btn btn-primary" id="btnSubmitImportGuest">Tiến hành Import</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 7: Import Nhóm Họ Hàng Từ Excel (POST /api/v1/family-groups/import) -->
+  <div class="modal" id="modalImportFamily">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Import Nhóm Họ Hàng Từ Excel (POST /family-groups/import)</h3>
+        <button class="modal-close" data-close="modalImportFamily">&times;</button>
+      </div>
+      <form id="formImportFamily">
+        <div class="modal-body">
+          <p style="font-size: 13px; color: #475569;">
+            Tải lên file Excel (.xlsx hoặc .xls) danh sách nhóm gia đình theo đúng mẫu template.
+          </p>
+          <div style="display:flex; justify-content: flex-end; margin-bottom: 8px;">
+            <a href="/api/backend/api/v1/family-groups/excel-template" download="family_group_import_template.xlsx" class="link-btn">
+              📥 Tải file mẫu family_group_import_template.xlsx
+            </a>
+          </div>
+          <label class="upload-dropzone" id="dropzoneFamily">
+            <input type="file" id="fileFamilyInput" accept=".xlsx, .xls" required>
+            <div class="upload-dropzone__icon">📑</div>
+            <div class="upload-dropzone__text">Bấm vào đây để chọn file Excel hoặc kéo thả file vào</div>
+            <div class="upload-dropzone__sub">Hỗ trợ định dạng .xlsx, .xls (tối đa 10MB)</div>
+          </label>
+          <div class="upload-file-selected" id="familySelectedFileName"></div>
+          <div class="import-result-card" id="familyImportResult"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" data-close="modalImportFamily">Đóng</button>
+          <button type="submit" class="btn btn-primary" id="btnSubmitImportFamily">Tiến hành Import</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="dash-toast" id="dashToast">Thông báo</div>
+
+  <script src="/dashboard.js"></script>
+</body>
+
+</html>

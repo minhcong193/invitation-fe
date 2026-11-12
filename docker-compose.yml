@@ -1,0 +1,11 @@
+services:
+  wedding:
+    build: .
+    container_name: wedding-invitation
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+
