@@ -190,7 +190,18 @@
     if (!targetKey && segments.length > 1 && segments[0] === 'greeting') {
       targetKey = segments[1];
     }
-    if (targetKey === 'cus') {
+    if (targetKey === 'family' || segments.includes('family')) {
+      const familyDefault = 'U, Cô, Dì, Chú, Bác, Anh, Em, Cháu';
+      const customName = (urlParams.get('name') || urlParams.get('to') || urlParams.get('guest') || familyDefault).trim();
+      document.getElementById('greetingEyebrow').textContent = 'Gia đình con Ngô Hường Tạ Thành trân trọng kính mời';
+      const gEl = document.getElementById('guestName');
+      gEl.textContent = customName;
+      if (customName.length > 25) {
+        gEl.style.fontSize = '24px';
+        gEl.style.lineHeight = '1.35';
+      }
+      document.getElementById('greetingCopy').textContent = 'tới chung vui trong ngày trọng đại của hai cháu';
+    } else if (targetKey === 'cus') {
       const customName = (urlParams.get('name') || urlParams.get('to') || urlParams.get('guest') || 'Quý khách').trim();
       document.getElementById('greetingEyebrow').textContent = 'Trân trọng kính mời';
       document.getElementById('guestName').textContent = customName;

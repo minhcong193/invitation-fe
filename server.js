@@ -103,6 +103,11 @@ function resolveGuestName(req) {
   const queryName = (req.query.name || req.query.to || '').trim();
   const pathParts = req.path.toLowerCase().split('/').filter(Boolean);
 
+  // Nếu là route family (/family hoặc /chu-re/family)
+  if (pathParts.includes('family')) {
+    return queryName || 'U, Cô, Dì, Chú, Bác, Anh, Em, Cháu';
+  }
+
   // Nếu là route tùy chỉnh tự do /chu-re/cus hoặc /co-dau/cus -> chỉ hiển thị đúng tên truyền vào
   if (pathParts.includes('cus')) {
     return queryName || 'quý khách';
@@ -121,7 +126,7 @@ function resolveGuestName(req) {
 // Nhận diện ngày cưới: Chú rể là 28.11.2026, Cô dâu là 29.11.2026
 function resolveWeddingDate(req) {
   const pathLower = req.path.toLowerCase();
-  if (pathLower.includes('chu-re')) {
+  if (pathLower.includes('family') || pathLower.includes('chu-re')) {
     return '28.11.2026';
   }
   if (pathLower.includes('co-dau')) {
@@ -139,10 +144,22 @@ function sendHtmlWithOG(req, res, filePath) {
   const fullUrl = `${domain}${encodeURI(req.originalUrl || '')}`;
   const ogImageUrl = `${domain}/img/og-preview.jpg`;
 
-  const dynamicDesc = `Trân trọng kính mời ${guestName} tới chung vui trong ngày trọng đại của Công Minh & Thu Hằng — ${weddingDate}`;
-  const dynamicTitle = guestName.toLowerCase() !== 'quý khách'
-    ? `Kính mời ${guestName} | Thiệp cưới Công Minh & Thu Hằng`
-    : `Công Minh & Thu Hằng | Wedding Invitation`;
+  const pathParts = req.path.toLowerCase().split('/').filter(Boolean);
+  const isFamilyPath = pathParts.includes('family');
+
+  let dynamicDesc;
+  let dynamicTitle;
+
+  if (isFamilyPath) {
+    const targetName = (req.query.name || req.query.to || '').trim() || 'U, Cô, Dì, Chú, Bác, Anh, Em, Cháu';
+    dynamicTitle = `Gia đình con Ngô Hường Tạ Thành kính mời | Thiệp cưới Công Minh & Thu Hằng`;
+    dynamicDesc = `Gia đình con Ngô Hường Tạ Thành trân trọng kính mời ${targetName} tới chung vui trong ngày trọng đại của Công Minh & Thu Hằng — 28.11.2026`;
+  } else {
+    dynamicDesc = `Trân trọng kính mời ${guestName} tới chung vui trong ngày trọng đại của Công Minh & Thu Hằng — ${weddingDate}`;
+    dynamicTitle = guestName.toLowerCase() !== 'quý khách'
+      ? `Kính mời ${guestName} | Thiệp cưới Công Minh & Thu Hằng`
+      : `Công Minh & Thu Hằng | Wedding Invitation`;
+  }
 
   try {
     let html = fs.readFileSync(filePath, 'utf8');
@@ -221,6 +238,14 @@ app.get(['/chu-re/cus', '/co-dau/cus', '/cus'], (req, res) => {
   sendHtmlWithOG(req, res, indexFile);
 });
 app.get('/greeting/cus', (req, res) => {
+  sendHtmlWithOG(req, res, greetingFile);
+});
+
+// Tuyến đường gia đình họ hàng (/family, /chu-re/family, /co-dau/family)
+app.get(['/family', '/chu-re/family', '/co-dau/family'], (req, res) => {
+  sendHtmlWithOG(req, res, indexFile);
+});
+app.get('/greeting/family', (req, res) => {
   sendHtmlWithOG(req, res, greetingFile);
 });
 

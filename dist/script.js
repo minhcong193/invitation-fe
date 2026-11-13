@@ -187,19 +187,26 @@ const searchParams = new URLSearchParams(window.location.search);
 let role = 'chu-re';
 let isInviteMode = false;
 let isCustomMode = false;
+let isFamilyMode = false;
 let inviteCode = null;
 let salutationKey = null;
 let familyCode = null;
 
 if (pathSegments.length > 0) {
   const p0 = normalizeSalutationKey(pathSegments[0]);
-  if (p0 === 'co-dau') {
+  if (p0 === 'family') {
+    role = 'chu-re';
+    isFamilyMode = true;
+  } else if (p0 === 'co-dau') {
     role = 'co-dau';
     if (pathSegments[1] === 'invite') {
       isInviteMode = true;
       inviteCode = pathSegments[2] || null;
     } else if (pathSegments[1] === 'cus') {
       isCustomMode = true;
+    } else if (pathSegments[1] === 'family') {
+      role = 'chu-re';
+      isFamilyMode = true;
     } else if (pathSegments[1]) {
       const candidateKey = normalizeSalutationKey(pathSegments[1]);
       if (genericSalutations[candidateKey]) {
@@ -215,6 +222,8 @@ if (pathSegments.length > 0) {
       inviteCode = pathSegments[2] || null;
     } else if (pathSegments[1] === 'cus') {
       isCustomMode = true;
+    } else if (pathSegments[1] === 'family') {
+      isFamilyMode = true;
     } else if (pathSegments[1]) {
       const candidateKey = normalizeSalutationKey(pathSegments[1]);
       if (genericSalutations[candidateKey]) {
@@ -1163,6 +1172,86 @@ if (isCustomMode) {
   }
 
   // Bỏ form xác nhận tham dự đối với link tùy chỉnh
+  if (defaultRsvpForm) {
+    defaultRsvpForm.style.display = 'none';
+  }
+}
+
+// =========================================================================
+// 11c. XỬ LÝ LINK /family (HOẶC /chu-re/family)
+// Gia đình con Ngô Hường Tạ Thành trân trọng kính mời U, Cô, Dì, Chú, Bác, Anh, Em, Cháu
+// =========================================================================
+if (isFamilyMode) {
+  // Ẩn các hộp khách mời khác
+  if (rsvpGuestBox) rsvpGuestBox.style.display = 'none';
+  if (rsvpFamilyBox) rsvpFamilyBox.style.display = 'none';
+
+  const familyDefaultGuest = 'U, Cô, Dì, Chú, Bác, Anh, Em, Cháu';
+  const familyGuestName = (queryGuestName || familyDefaultGuest).trim();
+
+  // 1. Màn hình mở thiệp (Opening screen)
+  const guestEl = $('#guestName');
+  if (guestEl) {
+    guestEl.textContent = familyGuestName;
+    if (familyGuestName.length > 25) {
+      guestEl.style.fontSize = '20px';
+      guestEl.style.lineHeight = '1.35';
+    }
+  }
+
+  const openEyebrow = $('#openingEyebrow') || $('#opening .eyebrow');
+  if (openEyebrow) openEyebrow.textContent = 'Gia đình con Ngô Hường Tạ Thành trân trọng kính mời';
+
+  const openCopy = $('#openingCopy') || $('#opening .opening__copy');
+  if (openCopy) openCopy.textContent = 'tới chung vui trong ngày trọng đại của hai cháu';
+
+  // 2. Thẻ Invitation Section
+  const invEyebrow = $('#invitationEyebrow') || $('.invitation .eyebrow');
+  if (invEyebrow) invEyebrow.textContent = 'Gia đình con Ngô Hường Tạ Thành trân trọng kính mời';
+
+  const invHeading = $('#invitationHeading') || $('.invitation .script');
+  if (invHeading) {
+    invHeading.innerHTML = 'Cùng chung vui với gia đình chúng con';
+  }
+
+  const invLead = $('#invitationLead') || $('.invitation .lead');
+  if (invLead) {
+    invLead.textContent = `Sự hiện diện của ${familyGuestName} là niềm vinh hạnh và niềm vui to lớn của gia đình chúng con trong ngày trọng đại này.`;
+  }
+
+  // 3. Khối RSVP: Ẩn form, hiển thị thiệp mời trang trọng của gia đình
+  const rsvpEyebrow = $('#rsvp .eyebrow');
+  if (rsvpEyebrow) rsvpEyebrow.textContent = 'Invitation';
+
+  const rsvpHeading = $('#rsvpHeading');
+  if (rsvpHeading) rsvpHeading.textContent = 'Thiệp mời gia đình';
+
+  const rsvpLead = $('#rsvpLead');
+  if (rsvpLead) rsvpLead.textContent = 'Gia đình con Ngô Hường Tạ Thành trân trọng kính mời:';
+
+  const rsvpSalutationBox = $('#rsvpSalutationBox');
+  if (rsvpSalutationBox) {
+    rsvpSalutationBox.style.display = 'block';
+
+    const saltEyebrow = $('#rsvpSalutationEyebrow');
+    if (saltEyebrow) saltEyebrow.textContent = 'Gia đình con Ngô Hường Tạ Thành trân trọng kính mời';
+
+    const saltName = $('#rsvpSalutationName');
+    if (saltName) {
+      saltName.textContent = familyGuestName;
+      if (familyGuestName.length > 25) {
+        saltName.style.fontSize = '20px';
+        saltName.style.lineHeight = '1.35';
+      }
+    }
+
+    const saltLead = $('#rsvpSalutationLead');
+    if (saltLead) {
+      saltLead.textContent = `Sự hiện diện của quý ${familyGuestName} là niềm hạnh phúc to lớn của gia đình chúng con trong ngày trọng đại!`;
+    }
+  }
+
+  // Bỏ form xác nhận tham dự đối với link gia đình
   if (defaultRsvpForm) {
     defaultRsvpForm.style.display = 'none';
   }

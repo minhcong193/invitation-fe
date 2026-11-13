@@ -1103,6 +1103,7 @@ const salutationItems = [
   { slug: 'gia-dinh-co', title: 'Gia đình Cô', pronoun: 'hai gia đình chúng tôi', type: 'Gia đình' },
   { slug: 'gia-dinh-chu', title: 'Gia đình Chú', pronoun: 'hai gia đình chúng tôi', type: 'Gia đình' },
   { slug: 'gia-dinh-bac', title: 'Gia đình Bác', pronoun: 'hai gia đình chúng tôi', type: 'Gia đình' },
+  { slug: 'family', title: 'Thiệp họ hàng (Ngô Hường Tạ Thành)', pronoun: 'gia đình chúng con', type: 'Gia đình' },
   { slug: 'cus?name=Tên+Khách', title: 'Tùy chỉnh tự do (Cus)', pronoun: 'hai gia đình chúng tôi', type: 'Tùy chỉnh' }
 ];
 
