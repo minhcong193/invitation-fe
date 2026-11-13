@@ -405,6 +405,22 @@ a {
     text-align: center;
 }
 
+.photo-break {
+    min-height: 72vh;
+    /* Tăng 30% chiều cao trên máy tính (55vh * 1.3 ≈ 72vh) */
+}
+
+/* Tùy chỉnh vị trí ảnh riêng cho từng block trên máy tính */
+.photo-break--just-married img {
+    object-position: center 45%;
+    /* Đẩy ảnh lên 15% (50% + 15%) để thấy rõ cô dâu & chú rể đang bước đi */
+}
+
+.photo-break--love-story img {
+    object-position: center 32%;
+    /* Dịch ảnh xuống trên máy tính để thấy rõ khuôn mặt cô dâu & chú rể */
+}
+
 .photo-break img,
 .countdown>img,
 .footer>img {
@@ -564,12 +580,29 @@ a {
 }
 
 /* Xuất hiện so le nhẹ nhàng lần lượt */
-.gallery__item:nth-child(1) { transition-delay: 0.04s; }
-.gallery__item:nth-child(2) { transition-delay: 0.10s; }
-.gallery__item:nth-child(3) { transition-delay: 0.16s; }
-.gallery__item:nth-child(4) { transition-delay: 0.22s; }
-.gallery__item:nth-child(5) { transition-delay: 0.28s; }
-.gallery__item:nth-child(6) { transition-delay: 0.34s; }
+.gallery__item:nth-child(1) {
+    transition-delay: 0.04s;
+}
+
+.gallery__item:nth-child(2) {
+    transition-delay: 0.10s;
+}
+
+.gallery__item:nth-child(3) {
+    transition-delay: 0.16s;
+}
+
+.gallery__item:nth-child(4) {
+    transition-delay: 0.22s;
+}
+
+.gallery__item:nth-child(5) {
+    transition-delay: 0.28s;
+}
+
+.gallery__item:nth-child(6) {
+    transition-delay: 0.34s;
+}
 
 .gallery__item img {
     width: 100%;
@@ -871,8 +904,32 @@ a {
 
 @media(max-width:760px) {
     .hero {
-        min-height: 70vh;
-        min-height: 70svh;
+        min-height: 100vh;
+        min-height: 100svh;
+        min-height: 100dvh;
+        height: 100vh;
+        height: 100svh;
+        height: 100dvh;
+    }
+
+    .hero__photo {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center center;
+        transform: none;
+    }
+
+    .hero__shade {
+        z-index: 1;
+        background: linear-gradient(180deg, rgba(10, 20, 8, .05) 0%, rgba(23, 34, 18, .2) 50%, rgba(23, 34, 18, .85) 100%);
+    }
+
+    .hero__content {
+        position: relative;
+        z-index: 2;
+        padding: 0 20px calc(env(safe-area-inset-bottom, 20px) + 36px);
+        text-align: center;
     }
 
     body {
@@ -932,6 +989,13 @@ a {
 
     .photo-break {
         min-height: 38vh
+    }
+
+    .photo-break img,
+    .photo-break--just-married img,
+    .photo-break--love-story img {
+        object-position: center center;
+        /* Giữ nguyên vị trí ảnh trên điện thoại */
     }
 
     .timer {
@@ -1674,6 +1738,12 @@ a {
     }
 
     /* 5. Khối Đếm ngược đến ngày */
+    .countdown {
+        min-height: 540px;
+        /* Tăng 30% chiều cao trên máy tính (380px * 1.3 ≈ 495px) */
+        padding: 50px 20px;
+    }
+
     .countdown .eyebrow {
         font-size: 16px;
         letter-spacing: .35em;
@@ -1681,7 +1751,28 @@ a {
     }
 
     .countdown h2 {
-        font-size: 40px;
+        font-size: 52px;
+        /* Tăng 30% cỡ chữ tiêu đề (40px * 1.3 ≈ 52px) */
+    }
+
+    .countdown .timer {
+        gap: 14px;
+        margin-top: 26px;
+    }
+
+    .countdown .timer div {
+        min-width: 104px;
+        /* Tăng 30% kích thước ô đếm ngược (80px * 1.3 ≈ 104px) */
+        padding: 14px 10px;
+    }
+
+    .countdown .timer b {
+        font-size: 47px;
+        /* Tăng 30% số đếm (36px * 1.3 ≈ 47px) */
+    }
+
+    .countdown .timer span {
+        font-size: 11px;
     }
 
     /* 6. Khối Xác nhận tham dự (Khách mời / Thiệp mời) */
