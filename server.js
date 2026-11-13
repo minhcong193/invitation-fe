@@ -75,19 +75,41 @@ const salutationNameMap = {
   'gia-dinh-bac': 'Gia đình Bác'
 };
 
-// Nhận diện tên khách mời từ query param hoặc slug trên URL
-function resolveGuestName(req) {
-  const queryName = (req.query.name || req.query.to || '').trim();
-  if (queryName) {
-    return queryName;
+// Ghép danh xưng và tên khách mời thông minh, không bị lặp từ
+function formatCombinedName(salutation, name) {
+  if (!salutation) return name || 'quý khách';
+  if (!name) return salutation;
+  const sLower = salutation.toLowerCase();
+  const nLower = name.toLowerCase();
+
+  // Nếu tên đã bắt đầu bằng chính danh xưng (ví dụ "Anh" với "Anh Minh", "Gia đình Chị" với "Gia đình Chị Lan")
+  if (nLower.startsWith(sLower)) {
+    return name;
   }
-  const pathParts = req.path.toLowerCase().split('/').filter(Boolean);
-  for (const part of pathParts) {
-    if (salutationNameMap[part]) {
-      return salutationNameMap[part];
+
+  // Nếu danh xưng là "Gia đình X" và tên nhập vào là "X Y" (ví dụ danh xưng "Gia đình Chị", tên "Chị Lan" -> "Gia đình Chị Lan")
+  if (sLower.startsWith('gia đình ')) {
+    const singleSal = sLower.replace('gia đình ', '').trim();
+    if (nLower.startsWith(singleSal)) {
+      return `Gia đình ${name}`;
     }
   }
-  return 'quý khách';
+
+  return `${salutation} ${name}`;
+}
+
+// Nhận diện tên khách mời: tự động kết hợp danh xưng từ URL slug với tên query
+function resolveGuestName(req) {
+  const queryName = (req.query.name || req.query.to || '').trim();
+  const pathParts = req.path.toLowerCase().split('/').filter(Boolean);
+  let salutation = '';
+  for (const part of pathParts) {
+    if (salutationNameMap[part]) {
+      salutation = salutationNameMap[part];
+      break;
+    }
+  }
+  return formatCombinedName(salutation, queryName);
 }
 
 // Nhận diện ngày cưới: Chú rể là 28.11.2026, Cô dâu là 29.11.2026
