@@ -932,6 +932,14 @@ a {
         text-align: center;
     }
 
+    /* Giảm 25% kích thước heroTitle & footerTitle khi xem trên điện thoại */
+    #heroTitle,
+    .hero h2,
+    #footerTitle,
+    .footer h2 {
+        font-size: clamp(38px, 9.8vw, 44px);
+    }
+
     body {
         font-size: 17px
     }
