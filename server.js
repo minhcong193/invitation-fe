@@ -58,32 +58,80 @@ app.use(express.json());
 const greetingFile = path.join(distDir, 'greeting.html');
 const dashboardFile = path.join(distDir, 'dashboard.html');
 
-// Hàm phục vụ file HTML kèm hỗ trợ Open Graph Preview động theo query param `?name=...`
+// Bảng ánh xạ slug danh xưng sang tên hiển thị có dấu
+const salutationNameMap = {
+  'em': 'Em',
+  'anh': 'Anh',
+  'chi': 'Chị',
+  'co': 'Cô',
+  'chu': 'Chú',
+  'bac': 'Bác',
+  'chau': 'Cháu',
+  'gia-dinh-em': 'Gia đình Em',
+  'gia-dinh-anh': 'Gia đình Anh',
+  'gia-dinh-chi': 'Gia đình Chị',
+  'gia-dinh-co': 'Gia đình Cô',
+  'gia-dinh-chu': 'Gia đình Chú',
+  'gia-dinh-bac': 'Gia đình Bác'
+};
+
+// Nhận diện tên khách mời từ query param hoặc slug trên URL
+function resolveGuestName(req) {
+  const queryName = (req.query.name || req.query.to || '').trim();
+  if (queryName) {
+    return queryName;
+  }
+  const pathParts = req.path.toLowerCase().split('/').filter(Boolean);
+  for (const part of pathParts) {
+    if (salutationNameMap[part]) {
+      return salutationNameMap[part];
+    }
+  }
+  return 'quý khách';
+}
+
+// Nhận diện ngày cưới: Chú rể là 28.11.2026, Cô dâu là 29.11.2026
+function resolveWeddingDate(req) {
+  const pathLower = req.path.toLowerCase();
+  if (pathLower.includes('chu-re')) {
+    return '28.11.2026';
+  }
+  if (pathLower.includes('co-dau')) {
+    return '29.11.2026';
+  }
+  return '28 & 29.11.2026';
+}
+
+// Hàm phục vụ file HTML kèm hỗ trợ Open Graph Preview động
 function sendHtmlWithOG(req, res, filePath) {
-  const guestName = (req.query.name || '').trim();
+  const guestName = resolveGuestName(req);
+  const weddingDate = resolveWeddingDate(req);
+
   const domain = 'https://minhhang-wedding.minhtc.io.vn';
   const fullUrl = `${domain}${encodeURI(req.originalUrl || '')}`;
   const ogImageUrl = `${domain}/img/og-preview.jpg`;
 
+  const dynamicDesc = `Trân trọng kính mời ${guestName} tới chung vui trong ngày trọng đại của Công Minh & Thu Hằng — ${weddingDate}`;
+  const dynamicTitle = guestName.toLowerCase() !== 'quý khách'
+    ? `Kính mời ${guestName} | Thiệp cưới Công Minh & Thu Hằng`
+    : `Công Minh & Thu Hằng | Wedding Invitation`;
+
   try {
     let html = fs.readFileSync(filePath, 'utf8');
+
+    // Cập nhật tiêu đề & mô tả cho Open Graph (Facebook, Zalo)
+    html = html.replace(/<title>.*?<\/title>/i, `<title>${dynamicTitle}</title>`);
+    html = html.replace(/(<meta\s+name="description"\s+content=")[^"]*(")/i, `$1${dynamicDesc}$2`);
+    html = html.replace(/(<meta\s+property="og:title"\s+content=")[^"]*(")/i, `$1${dynamicTitle}$2`);
+    html = html.replace(/(<meta\s+property="og:description"\s+content=")[^"]*(")/i, `$1${dynamicDesc}$2`);
+    html = html.replace(/(<meta\s+name="twitter:title"\s+content=")[^"]*(")/i, `$1${dynamicTitle}$2`);
+    html = html.replace(/(<meta\s+name="twitter:description"\s+content=")[^"]*(")/i, `$1${dynamicDesc}$2`);
 
     // Luôn đảm bảo og:image và og:url có scheme https và domain đầy đủ
     html = html.replace(/(<meta\s+property="og:url"\s+content=")[^"]*(")/i, `$1${fullUrl}$2`);
     html = html.replace(/(<meta\s+property="og:image"\s+content=")[^"]*(")/i, `$1${ogImageUrl}$2`);
     html = html.replace(/(<meta\s+property="og:image:secure_url"\s+content=")[^"]*(")/i, `$1${ogImageUrl}$2`);
     html = html.replace(/(<meta\s+name="twitter:image"\s+content=")[^"]*(")/i, `$1${ogImageUrl}$2`);
-
-    if (guestName) {
-      const dynamicTitle = `Kính mời ${guestName} | Thiệp cưới Công Minh & Thu Hằng`;
-      const dynamicDesc = `Trân trọng kính mời ${guestName} tới chung vui trong ngày trọng đại của Công Minh & Thu Hằng — 28 & 29.11.2026`;
-
-      html = html.replace(/<title>.*?<\/title>/i, `<title>${dynamicTitle}</title>`);
-      html = html.replace(/(<meta\s+property="og:title"\s+content=")[^"]*(")/i, `$1${dynamicTitle}$2`);
-      html = html.replace(/(<meta\s+property="og:description"\s+content=")[^"]*(")/i, `$1${dynamicDesc}$2`);
-      html = html.replace(/(<meta\s+name="twitter:title"\s+content=")[^"]*(")/i, `$1${dynamicTitle}$2`);
-      html = html.replace(/(<meta\s+name="twitter:description"\s+content=")[^"]*(")/i, `$1${dynamicDesc}$2`);
-    }
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     return res.send(html);
