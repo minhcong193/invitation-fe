@@ -435,7 +435,9 @@ const lightbox = $('#lightbox');
 if (lightbox) {
   $$('.gallery__item').forEach((button) => {
     button.addEventListener('click', () => {
-      $('img', lightbox).src = $('img', button).src;
+      const img = $('img', button);
+      const fullSrc = img ? (img.getAttribute('data-full') || img.src) : '';
+      $('img', lightbox).src = fullSrc;
       lightbox.showModal();
     });
   });
