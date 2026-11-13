@@ -61,11 +61,9 @@ const dashboardFile = path.join(distDir, 'dashboard.html');
 // Hàm phục vụ file HTML kèm hỗ trợ Open Graph Preview động theo query param `?name=...`
 function sendHtmlWithOG(req, res, filePath) {
   const guestName = (req.query.name || '').trim();
-  const host = req.headers.host || 'minhhang-wedding.minhtc.io.vn';
-  const proto = req.headers['x-forwarded-proto'] || 'https';
-  const baseUrl = `${proto}://${host}`;
-  const fullUrl = `${baseUrl}${req.originalUrl}`;
-  const ogImageUrl = `${baseUrl}/img/og-preview.jpg`;
+  const domain = 'https://minhhang-wedding.minhtc.io.vn';
+  const fullUrl = `${domain}${encodeURI(req.originalUrl || '')}`;
+  const ogImageUrl = `${domain}/img/og-preview.jpg`;
 
   try {
     let html = fs.readFileSync(filePath, 'utf8');
