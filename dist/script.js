@@ -348,8 +348,18 @@ function formatSlug(slug) {
 // Lấy tên khách từ query param (?to= hoặc ?guest= hoặc ?name=)
 let queryGuestName = searchParams.get('to') || searchParams.get('guest') || searchParams.get('name');
 if (queryGuestName) {
+  let displayGuestName = queryGuestName;
+  if (salutationInfo) {
+    if (salutationInfo.title.toLowerCase().startsWith('gia đình ') && queryGuestName.toLowerCase().startsWith('chị ') && salutationInfo.title.toLowerCase().includes('chị')) {
+      displayGuestName = `Gia đình ${queryGuestName}`;
+    } else if (queryGuestName.toLowerCase().startsWith(salutationInfo.title.toLowerCase())) {
+      displayGuestName = queryGuestName;
+    } else {
+      displayGuestName = `${salutationInfo.title} ${queryGuestName}`;
+    }
+  }
   const guestEl = $('#guestName');
-  if (guestEl) guestEl.textContent = queryGuestName.slice(0, 60);
+  if (guestEl) guestEl.textContent = displayGuestName.slice(0, 60);
 }
 
 // Tự động chọn đối tượng khách mời trong form RSVP mặc định
@@ -1125,9 +1135,15 @@ function computeGiftDescription(guestApiData = null) {
   // 2. Nếu là các mẫu common
   // description mặc định với nhà trai nếu là các mẫu common SẼ MẶC ĐỊNH LÀ NAME(không dấu) + "chuc mung"
   if (salutationInfo) {
-    let rawName = queryGuestName;
-    if (!rawName) {
-      rawName = salutationInfo.title;
+    let rawName = salutationInfo.title;
+    if (queryGuestName) {
+      if (salutationInfo.title.toLowerCase().startsWith('gia đình ') && queryGuestName.toLowerCase().startsWith('chị ') && salutationInfo.title.toLowerCase().includes('chị')) {
+        rawName = `Gia đình ${queryGuestName}`;
+      } else if (queryGuestName.toLowerCase().startsWith(salutationInfo.title.toLowerCase())) {
+        rawName = queryGuestName;
+      } else {
+        rawName = `${salutationInfo.title} ${queryGuestName}`;
+      }
     }
     const cleanName = removeVietnameseAccents(rawName);
     if (cleanName) {
