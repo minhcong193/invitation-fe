@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const http = require('http');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -57,6 +58,31 @@ app.use(express.json());
 const greetingFile = path.join(distDir, 'greeting.html');
 const dashboardFile = path.join(distDir, 'dashboard.html');
 
+// Hàm phục vụ file HTML kèm hỗ trợ Open Graph Preview động theo query param `?name=...`
+function sendHtmlWithOG(req, res, filePath) {
+  const guestName = (req.query.name || '').trim();
+  if (!guestName) {
+    return res.sendFile(filePath);
+  }
+
+  try {
+    let html = fs.readFileSync(filePath, 'utf8');
+    const dynamicTitle = `Kính mời ${guestName} | Thiệp cưới Công Minh & Thu Hằng`;
+    const dynamicDesc = `Trân trọng kính mời ${guestName} tới chung vui trong ngày trọng đại của Công Minh & Thu Hằng — 28 & 29.11.2026`;
+
+    html = html.replace(/<title>.*?<\/title>/i, `<title>${dynamicTitle}</title>`);
+    html = html.replace(/(<meta\s+property="og:title"\s+content=")[^"]*(")/i, `$1${dynamicTitle}$2`);
+    html = html.replace(/(<meta\s+property="og:description"\s+content=")[^"]*(")/i, `$1${dynamicDesc}$2`);
+    html = html.replace(/(<meta\s+name="twitter:title"\s+content=")[^"]*(")/i, `$1${dynamicTitle}$2`);
+    html = html.replace(/(<meta\s+name="twitter:description"\s+content=")[^"]*(")/i, `$1${dynamicDesc}$2`);
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    return res.send(html);
+  } catch (err) {
+    return res.sendFile(filePath);
+  }
+}
+
 // 1. Trang chủ mặc định khi vào domain sẽ chuyển hướng sang /greeting
 app.get('/', (req, res) => {
   res.redirect('/greeting');
@@ -64,7 +90,7 @@ app.get('/', (req, res) => {
 
 // 2. Màn hình Greeting chỉ chứa màn chào, đếm thời gian, sự kiện và âm nhạc (không redirect)
 app.get('/greeting', (req, res) => {
-  res.sendFile(greetingFile);
+  sendHtmlWithOG(req, res, greetingFile);
 });
 
 // 3. Màn hình Dashboard thống kê các entity (Khách mời, Nhóm gia đình, Sổ lưu bút)
@@ -99,10 +125,10 @@ const salutationSlugs = [
 ];
 
 salutationSlugs.forEach((slug) => {
-  app.get(`/chu-re/${slug}`, (req, res) => res.sendFile(indexFile));
-  app.get(`/co-dau/${slug}`, (req, res) => res.sendFile(indexFile));
-  app.get(`/${slug}`, (req, res) => res.sendFile(indexFile));
-  app.get(`/greeting/${slug}`, (req, res) => res.sendFile(greetingFile));
+  app.get(`/chu-re/${slug}`, (req, res) => sendHtmlWithOG(req, res, indexFile));
+  app.get(`/co-dau/${slug}`, (req, res) => sendHtmlWithOG(req, res, indexFile));
+  app.get(`/${slug}`, (req, res) => sendHtmlWithOG(req, res, indexFile));
+  app.get(`/greeting/${slug}`, (req, res) => sendHtmlWithOG(req, res, greetingFile));
 });
 
 // Danh sách các route theo yêu cầu:
@@ -120,13 +146,13 @@ const targetRoutes = [
 
 targetRoutes.forEach((route) => {
   app.get(route, (req, res) => {
-    res.sendFile(indexFile);
+    sendHtmlWithOG(req, res, indexFile);
   });
 });
 
 // Fallback: mọi route khác trả về trang index.html
 app.use((req, res) => {
-  res.status(200).sendFile(indexFile);
+  sendHtmlWithOG(req, res, indexFile);
 });
 
 app.listen(PORT, '0.0.0.0', () => {
