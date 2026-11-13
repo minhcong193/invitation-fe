@@ -463,24 +463,12 @@ const wishForm = $('#wishForm');
 const wishList = $('#wishList');
 const wishMarqueeWrapper = $('#wishMarqueeWrapper');
 
-const defaultWishes = [];
-
-// Xóa bỏ các lời chúc mock cũ nếu từng lưu vào localStorage
-const oldMockKeywords = [
-  'Chúc hai cháu trăm năm hạnh phúc',
-  'Chúc mừng Công Minh & Thu Hằng!',
-  'Mừng hạnh phúc hai cháu!',
-  'Chúc chú rể Công Minh và cô dâu Thu Hằng mãi mãi hạnh phúc',
-  'Cô dâu xinh đẹp nhất trần đời!',
-  'Chúc hai em trăm năm hòa hợp'
-];
-
-let localWishes = JSON.parse(localStorage.getItem('minh-hang-wishes') || '[]')
-  .filter(item => !oldMockKeywords.some(kw => item.message && item.message.includes(kw)));
+// Xóa sạch cache localStorage cũ nếu từng lưu
 try {
-  localStorage.setItem('minh-hang-wishes', JSON.stringify(localWishes));
+  localStorage.removeItem('minh-hang-wishes');
 } catch (_) {}
 
+let liveWishes = [];
 let allWishesList = [];
 
 let scrollPos = 0;
@@ -492,13 +480,13 @@ function renderWishes() {
   if (!wishList) return;
   wishList.innerHTML = '';
 
-  // Kết hợp lời chúc từ localStorage và lời chúc mẫu
-  const combined = [...localWishes, ...defaultWishes];
   // Lọc trùng theo tên và nội dung
   const uniqueMap = new Map();
-  combined.forEach(item => {
-    const key = `${item.name}-${item.message}`;
-    if (!uniqueMap.has(key)) uniqueMap.set(key, item);
+  liveWishes.forEach(item => {
+    if (item && item.message) {
+      const key = `${(item.name || '').trim()}-${item.message.trim()}`;
+      if (!uniqueMap.has(key)) uniqueMap.set(key, item);
+    }
   });
   allWishesList = Array.from(uniqueMap.values());
 
@@ -525,7 +513,7 @@ function renderWishes() {
     item.className = 'wish';
     const author = document.createElement('b');
     const copy = document.createElement('p');
-    author.textContent = name;
+    author.textContent = name || 'Khách quý';
     copy.textContent = message;
     item.append(author, copy);
     wishList.append(item);
@@ -595,28 +583,48 @@ if (wishMarqueeWrapper) {
   }, { passive: true });
 }
 
-// Tải thêm lời chúc đã được duyệt từ API backend (nếu có)
-(async function fetchBackendGuestbook() {
-  try {
-    const res = await fetch('/api/backend/api/v1/guestbook?page=0&size=50', {
-      headers: { 'Accept': 'application/json' }
-    });
-    if (res.ok) {
-      const json = await res.json();
-      const apiList = json?.data?.content || json?.data || [];
-      if (Array.isArray(apiList) && apiList.length > 0) {
-        apiList.forEach(m => {
-          localWishes.unshift({
-            name: m.displayName || m.invitedGuestName || 'Khách quý',
-            message: m.message
-          });
-        });
-        renderWishes();
-      }
-    }
-  } catch (_) { }
-})();
+// Tải toàn bộ lời chúc từ API backend ở TẤT CẢ các trạng thái (PENDING, APPROVED,...)
+async function fetchBackendGuestbook() {
+  const endpoints = [
+    '/api/backend/api/v1/guestbook/admin?page=0&size=500',
+    '/api/v1/guestbook/admin?page=0&size=500',
+    '/api/backend/api/v1/guestbook?page=0&size=500',
+    '/api/v1/guestbook?page=0&size=500'
+  ];
 
+  for (const ep of endpoints) {
+    try {
+      const res = await fetch(ep, {
+        headers: { 'Accept': 'application/json' }
+      });
+      if (res.ok) {
+        const json = await res.json();
+        const apiList = json?.data?.content || json?.data || [];
+        if (Array.isArray(apiList) && apiList.length > 0) {
+          const fetchedWishes = apiList
+            .filter(m => m && m.message && m.message.trim())
+            .map(m => ({
+              name: (m.displayName || m.invitedGuestName || 'Khách quý').trim(),
+              message: m.message.trim()
+            }));
+
+          // Giữ lại các lời chúc vừa gửi trong phiên nếu backend chưa kịp cập nhật
+          const merged = [...liveWishes];
+          fetchedWishes.forEach(fw => {
+            const exists = merged.some(w => w.name === fw.name && w.message === fw.message);
+            if (!exists) merged.push(fw);
+          });
+
+          liveWishes = merged.length > 0 ? merged : fetchedWishes;
+          renderWishes();
+          return;
+        }
+      }
+    } catch (_) {}
+  }
+}
+
+fetchBackendGuestbook();
 renderWishes();
 startAutoScroll();
 
@@ -624,29 +632,36 @@ if (wishForm) {
   wishForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     const data = new FormData(wishForm);
-    const authorName = data.get('name').trim();
-    const wishMsg = data.get('message').trim();
+    const authorName = (data.get('name') || '').trim();
+    const wishMsg = (data.get('message') || '').trim();
 
     if (!authorName || !wishMsg) return;
 
-    // Lưu vào danh sách hiển thị
-    localWishes.unshift({ name: authorName, message: wishMsg });
-    localStorage.setItem('minh-hang-wishes', JSON.stringify(localWishes.slice(0, 50)));
-
-    // Thử gửi sang backend API nếu có kết nối
-    try {
-      fetch('/api/backend/api/v1/guestbook', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ displayName: authorName, message: wishMsg })
-      }).catch(() => { });
-    } catch (_) { }
-
-    wishForm.reset();
+    // Hiển thị ngay lời chúc mới vào danh sách đang chạy (hoàn toàn không lưu vào localStorage)
+    liveWishes.unshift({ name: authorName, message: wishMsg });
     renderWishes();
     scrollPos = 0; // Đưa cuộn về vị trí đầu để thấy ngay lời chúc mới
     if (wishMarqueeWrapper) wishMarqueeWrapper.scrollTop = 0;
+
+    wishForm.reset();
     showToast('Cảm ơn bạn đã gửi lời chúc tốt đẹp!');
+
+    // Gửi sang backend API
+    const postUrls = ['/api/backend/api/v1/guestbook', '/api/v1/guestbook'];
+    for (const u of postUrls) {
+      try {
+        const res = await fetch(u, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ displayName: authorName, message: wishMsg })
+        });
+        if (res.ok) {
+          // Sau khi gửi thành công, fetch lại từ backend sau 1s để đồng bộ danh sách
+          setTimeout(fetchBackendGuestbook, 1000);
+          break;
+        }
+      } catch (_) {}
+    }
   });
 }
 
