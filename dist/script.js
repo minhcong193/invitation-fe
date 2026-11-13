@@ -186,6 +186,7 @@ const searchParams = new URLSearchParams(window.location.search);
 
 let role = 'chu-re';
 let isInviteMode = false;
+let isCustomMode = false;
 let inviteCode = null;
 let salutationKey = null;
 let familyCode = null;
@@ -197,6 +198,8 @@ if (pathSegments.length > 0) {
     if (pathSegments[1] === 'invite') {
       isInviteMode = true;
       inviteCode = pathSegments[2] || null;
+    } else if (pathSegments[1] === 'cus') {
+      isCustomMode = true;
     } else if (pathSegments[1]) {
       const candidateKey = normalizeSalutationKey(pathSegments[1]);
       if (genericSalutations[candidateKey]) {
@@ -210,6 +213,8 @@ if (pathSegments.length > 0) {
     if (pathSegments[1] === 'invite') {
       isInviteMode = true;
       inviteCode = pathSegments[2] || null;
+    } else if (pathSegments[1] === 'cus') {
+      isCustomMode = true;
     } else if (pathSegments[1]) {
       const candidateKey = normalizeSalutationKey(pathSegments[1]);
       if (genericSalutations[candidateKey]) {
@@ -221,6 +226,9 @@ if (pathSegments.length > 0) {
   } else if (p0 === 'invite') {
     isInviteMode = true;
     inviteCode = pathSegments[1] || null;
+  } else if (p0 === 'cus') {
+    role = 'chu-re';
+    isCustomMode = true;
   } else if (genericSalutations[p0]) {
     // Truy cập trực tiếp đường dẫn ngắn ví dụ: /bac, /em, /gia-dinh-bac
     role = 'chu-re';
@@ -1088,6 +1096,73 @@ if (salutationInfo) {
   }
 
   // Bỏ hoàn toàn form xác nhận tham dự đối với các link common
+  if (defaultRsvpForm) {
+    defaultRsvpForm.style.display = 'none';
+  }
+}
+
+// =========================================================================
+// 11b. XỬ LÝ LINK TÙY CHỈNH (/chu-re/cus?name={tên} hoặc /co-dau/cus?name={tên})
+// Chỉ hiển thị đúng tên đã truyền vào query param
+// =========================================================================
+if (isCustomMode) {
+  // Ẩn các hộp khách mời khác
+  if (rsvpGuestBox) rsvpGuestBox.style.display = 'none';
+  if (rsvpFamilyBox) rsvpFamilyBox.style.display = 'none';
+
+  const customName = (queryGuestName || 'Quý khách').trim();
+
+  // 1. Màn hình mở thiệp (Opening screen)
+  const guestEl = $('#guestName');
+  if (guestEl) guestEl.textContent = customName.slice(0, 60);
+
+  const openEyebrow = $('#openingEyebrow') || $('#opening .eyebrow');
+  if (openEyebrow) openEyebrow.textContent = 'Trân trọng kính mời';
+
+  const openCopy = $('#openingCopy') || $('#opening .opening__copy');
+  if (openCopy) openCopy.textContent = 'tới chung vui trong ngày trọng đại của';
+
+  // 2. Thẻ Invitation Section
+  const invEyebrow = $('#invitationEyebrow') || $('.invitation .eyebrow');
+  if (invEyebrow) invEyebrow.textContent = 'Trân trọng kính mời';
+
+  const invHeading = $('#invitationHeading') || $('.invitation .script');
+  if (invHeading) {
+    invHeading.innerHTML = 'Cùng chung vui với hai gia đình chúng tôi';
+  }
+
+  const invLead = $('#invitationLead') || $('.invitation .lead');
+  if (invLead) {
+    invLead.textContent = `Sự hiện diện của ${customName} là niềm vinh hạnh và niềm vui to lớn của hai gia đình chúng tôi trong ngày trọng đại này.`;
+  }
+
+  // 3. Khối RSVP: Ẩn form, hiển thị thiệp mời trang trọng chỉ với đúng tên truyền vào
+  const rsvpEyebrow = $('#rsvp .eyebrow');
+  if (rsvpEyebrow) rsvpEyebrow.textContent = 'Invitation';
+
+  const rsvpHeading = $('#rsvpHeading');
+  if (rsvpHeading) rsvpHeading.textContent = 'Thiệp mời chung vui';
+
+  const rsvpLead = $('#rsvpLead');
+  if (rsvpLead) rsvpLead.textContent = 'Hai gia đình chúng tôi rất hân hạnh và trân trọng kính mời:';
+
+  const rsvpSalutationBox = $('#rsvpSalutationBox');
+  if (rsvpSalutationBox) {
+    rsvpSalutationBox.style.display = 'block';
+
+    const saltEyebrow = $('#rsvpSalutationEyebrow');
+    if (saltEyebrow) saltEyebrow.textContent = 'Trân trọng kính mời';
+
+    const saltName = $('#rsvpSalutationName');
+    if (saltName) saltName.textContent = customName;
+
+    const saltLead = $('#rsvpSalutationLead');
+    if (saltLead) {
+      saltLead.textContent = `Sự hiện diện của ${customName} là niềm vinh hạnh to lớn của hai gia đình chúng tôi trong ngày trọng đại!`;
+    }
+  }
+
+  // Bỏ form xác nhận tham dự đối với link tùy chỉnh
   if (defaultRsvpForm) {
     defaultRsvpForm.style.display = 'none';
   }

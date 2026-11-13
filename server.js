@@ -102,6 +102,12 @@ function formatCombinedName(salutation, name) {
 function resolveGuestName(req) {
   const queryName = (req.query.name || req.query.to || '').trim();
   const pathParts = req.path.toLowerCase().split('/').filter(Boolean);
+
+  // Nếu là route tùy chỉnh tự do /chu-re/cus hoặc /co-dau/cus -> chỉ hiển thị đúng tên truyền vào
+  if (pathParts.includes('cus')) {
+    return queryName || 'quý khách';
+  }
+
   let salutation = '';
   for (const part of pathParts) {
     if (salutationNameMap[part]) {
@@ -208,6 +214,14 @@ salutationSlugs.forEach((slug) => {
   app.get(`/co-dau/${slug}`, (req, res) => sendHtmlWithOG(req, res, indexFile));
   app.get(`/${slug}`, (req, res) => sendHtmlWithOG(req, res, indexFile));
   app.get(`/greeting/${slug}`, (req, res) => sendHtmlWithOG(req, res, greetingFile));
+});
+
+// Tuyến đường tùy chỉnh tên tự do (/chu-re/cus?name={tên} hoặc /co-dau/cus?name={tên})
+app.get(['/chu-re/cus', '/co-dau/cus', '/cus'], (req, res) => {
+  sendHtmlWithOG(req, res, indexFile);
+});
+app.get('/greeting/cus', (req, res) => {
+  sendHtmlWithOG(req, res, greetingFile);
 });
 
 // Danh sách các route theo yêu cầu:

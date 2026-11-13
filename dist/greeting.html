@@ -100,9 +100,9 @@
   </main>
 
   <script>
-    // 1. Lấy tên khách từ query param (?to= hoặc ?guest=)
+    // 1. Lấy tên khách từ query param (?name= hoặc ?to= hoặc ?guest=)
     const params = new URLSearchParams(window.location.search);
-    const guestParam = params.get('to') || params.get('guest');
+    const guestParam = params.get('name') || params.get('to') || params.get('guest');
     if (guestParam) {
       document.getElementById('guestName').textContent = guestParam.slice(0, 60);
     }
@@ -190,7 +190,12 @@
     if (!targetKey && segments.length > 1 && segments[0] === 'greeting') {
       targetKey = segments[1];
     }
-    if (targetKey) {
+    if (targetKey === 'cus') {
+      const customName = (urlParams.get('name') || urlParams.get('to') || urlParams.get('guest') || 'Quý khách').trim();
+      document.getElementById('greetingEyebrow').textContent = 'Trân trọng kính mời';
+      document.getElementById('guestName').textContent = customName;
+      document.getElementById('greetingCopy').textContent = 'tới chung vui trong ngày trọng đại của hai gia đình chúng tôi';
+    } else if (targetKey) {
       const cleanKey = targetKey.toLowerCase()
         .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
         .replace(/đ/g, 'd')
