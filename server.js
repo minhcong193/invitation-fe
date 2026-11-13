@@ -61,20 +61,31 @@ const dashboardFile = path.join(distDir, 'dashboard.html');
 // Hàm phục vụ file HTML kèm hỗ trợ Open Graph Preview động theo query param `?name=...`
 function sendHtmlWithOG(req, res, filePath) {
   const guestName = (req.query.name || '').trim();
-  if (!guestName) {
-    return res.sendFile(filePath);
-  }
+  const host = req.headers.host || 'minhhang-wedding.minhtc.io.vn';
+  const proto = req.headers['x-forwarded-proto'] || 'https';
+  const baseUrl = `${proto}://${host}`;
+  const fullUrl = `${baseUrl}${req.originalUrl}`;
+  const ogImageUrl = `${baseUrl}/img/og-preview.jpg`;
 
   try {
     let html = fs.readFileSync(filePath, 'utf8');
-    const dynamicTitle = `Kính mời ${guestName} | Thiệp cưới Công Minh & Thu Hằng`;
-    const dynamicDesc = `Trân trọng kính mời ${guestName} tới chung vui trong ngày trọng đại của Công Minh & Thu Hằng — 28 & 29.11.2026`;
 
-    html = html.replace(/<title>.*?<\/title>/i, `<title>${dynamicTitle}</title>`);
-    html = html.replace(/(<meta\s+property="og:title"\s+content=")[^"]*(")/i, `$1${dynamicTitle}$2`);
-    html = html.replace(/(<meta\s+property="og:description"\s+content=")[^"]*(")/i, `$1${dynamicDesc}$2`);
-    html = html.replace(/(<meta\s+name="twitter:title"\s+content=")[^"]*(")/i, `$1${dynamicTitle}$2`);
-    html = html.replace(/(<meta\s+name="twitter:description"\s+content=")[^"]*(")/i, `$1${dynamicDesc}$2`);
+    // Luôn đảm bảo og:image và og:url có scheme https và domain đầy đủ
+    html = html.replace(/(<meta\s+property="og:url"\s+content=")[^"]*(")/i, `$1${fullUrl}$2`);
+    html = html.replace(/(<meta\s+property="og:image"\s+content=")[^"]*(")/i, `$1${ogImageUrl}$2`);
+    html = html.replace(/(<meta\s+property="og:image:secure_url"\s+content=")[^"]*(")/i, `$1${ogImageUrl}$2`);
+    html = html.replace(/(<meta\s+name="twitter:image"\s+content=")[^"]*(")/i, `$1${ogImageUrl}$2`);
+
+    if (guestName) {
+      const dynamicTitle = `Kính mời ${guestName} | Thiệp cưới Công Minh & Thu Hằng`;
+      const dynamicDesc = `Trân trọng kính mời ${guestName} tới chung vui trong ngày trọng đại của Công Minh & Thu Hằng — 28 & 29.11.2026`;
+
+      html = html.replace(/<title>.*?<\/title>/i, `<title>${dynamicTitle}</title>`);
+      html = html.replace(/(<meta\s+property="og:title"\s+content=")[^"]*(")/i, `$1${dynamicTitle}$2`);
+      html = html.replace(/(<meta\s+property="og:description"\s+content=")[^"]*(")/i, `$1${dynamicDesc}$2`);
+      html = html.replace(/(<meta\s+name="twitter:title"\s+content=")[^"]*(")/i, `$1${dynamicTitle}$2`);
+      html = html.replace(/(<meta\s+name="twitter:description"\s+content=")[^"]*(")/i, `$1${dynamicDesc}$2`);
+    }
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     return res.send(html);
