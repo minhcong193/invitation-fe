@@ -241,8 +241,12 @@ app.get('/greeting/cus', (req, res) => {
   sendHtmlWithOG(req, res, greetingFile);
 });
 
-// Tuyến đường gia đình họ hàng (/family, /chu-re/family, /co-dau/family)
-app.get(['/family', '/chu-re/family', '/co-dau/family'], (req, res) => {
+// Tuyến đường gia đình họ hàng (/chu-re/family)
+app.get('/family', (req, res) => {
+  const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+  res.redirect(`/chu-re/family${query}`);
+});
+app.get(['/chu-re/family', '/co-dau/family'], (req, res) => {
   sendHtmlWithOG(req, res, indexFile);
 });
 app.get('/greeting/family', (req, res) => {

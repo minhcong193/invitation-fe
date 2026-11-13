@@ -194,40 +194,35 @@ let familyCode = null;
 
 if (pathSegments.length > 0) {
   const p0 = normalizeSalutationKey(pathSegments[0]);
-  if (p0 === 'family') {
+  const p1 = pathSegments[1] ? normalizeSalutationKey(pathSegments[1]) : '';
+
+  if (p0 === 'family' || p1 === 'family') {
     role = 'chu-re';
     isFamilyMode = true;
   } else if (p0 === 'co-dau') {
     role = 'co-dau';
-    if (pathSegments[1] === 'invite') {
+    if (p1 === 'invite') {
       isInviteMode = true;
       inviteCode = pathSegments[2] || null;
-    } else if (pathSegments[1] === 'cus') {
+    } else if (p1 === 'cus') {
       isCustomMode = true;
-    } else if (pathSegments[1] === 'family') {
-      role = 'chu-re';
-      isFamilyMode = true;
-    } else if (pathSegments[1]) {
-      const candidateKey = normalizeSalutationKey(pathSegments[1]);
-      if (genericSalutations[candidateKey]) {
-        salutationKey = candidateKey;
+    } else if (p1) {
+      if (genericSalutations[p1]) {
+        salutationKey = p1;
       } else {
         familyCode = pathSegments[1];
       }
     }
   } else if (p0 === 'chu-re') {
     role = 'chu-re';
-    if (pathSegments[1] === 'invite') {
+    if (p1 === 'invite') {
       isInviteMode = true;
       inviteCode = pathSegments[2] || null;
-    } else if (pathSegments[1] === 'cus') {
+    } else if (p1 === 'cus') {
       isCustomMode = true;
-    } else if (pathSegments[1] === 'family') {
-      isFamilyMode = true;
-    } else if (pathSegments[1]) {
-      const candidateKey = normalizeSalutationKey(pathSegments[1]);
-      if (genericSalutations[candidateKey]) {
-        salutationKey = candidateKey;
+    } else if (p1) {
+      if (genericSalutations[p1]) {
+        salutationKey = p1;
       } else {
         familyCode = pathSegments[1];
       }
