@@ -518,6 +518,9 @@ function renderWishes() {
     item.append(author, copy);
     wishList.append(item);
   });
+
+  // Đảm bảo auto-scroll luôn kích hoạt sau khi render danh sách lời chúc
+  startAutoScroll();
 }
 
 // Hàm chạy cuộn tự động vòng lặp
@@ -525,8 +528,7 @@ function startAutoScroll() {
   if (animFrameId) cancelAnimationFrame(animFrameId);
 
   function stepScroll() {
-    if (allWishesList.length === 0) return;
-    if (!isUserInteracting && wishMarqueeWrapper && wishList) {
+    if (!isUserInteracting && wishMarqueeWrapper && wishList && allWishesList.length > 0) {
       const halfHeight = wishList.scrollHeight / 2;
       if (halfHeight > 0) {
         scrollPos += 0.6; // Tốc độ cuộn mượt mà (~36px/giây)
@@ -536,6 +538,7 @@ function startAutoScroll() {
         wishMarqueeWrapper.scrollTop = scrollPos;
       }
     }
+    // Luôn tiếp tục vòng lặp animation frame để tự động cuộn khi có dữ liệu
     animFrameId = requestAnimationFrame(stepScroll);
   }
 
@@ -555,6 +558,7 @@ if (wishMarqueeWrapper) {
     clearTimeout(resumeTimer);
     resumeTimer = setTimeout(() => {
       isUserInteracting = false;
+      startAutoScroll();
     }, 1000);
   });
 
@@ -569,6 +573,7 @@ if (wishMarqueeWrapper) {
     clearTimeout(resumeTimer);
     resumeTimer = setTimeout(() => {
       isUserInteracting = false;
+      startAutoScroll();
     }, 2000);
   }, { passive: true });
 
@@ -579,6 +584,7 @@ if (wishMarqueeWrapper) {
     clearTimeout(resumeTimer);
     resumeTimer = setTimeout(() => {
       isUserInteracting = false;
+      startAutoScroll();
     }, 2000);
   }, { passive: true });
 }
