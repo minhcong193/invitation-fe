@@ -703,26 +703,26 @@ if (defaultRsvpForm) {
       }
 
       // Xác định guestSide: mặc định gửi theo link (co-dau -> bride, chu-re -> groom)
-      let guestSide = role === 'co-dau' ? 'bride' : 'groom';
-      if (data.side) {
-        const sideVal = String(data.side).toLowerCase();
-        if (sideVal.includes('dâu') || sideVal === 'bride') {
-          guestSide = 'bride';
-        } else if (sideVal.includes('rể') || sideVal === 'groom') {
-          guestSide = 'groom';
-        }
-      }
+      const guestSide = role === 'co-dau' ? 'bride' : 'groom';
 
       const countNum = parseInt(data.count, 10);
       const expectedGuestCount = (!isNaN(countNum) && countNum > 0) ? countNum : 1;
       const noteText = (data.message || '').trim() || null;
-      const groupNameParam = (queryGuestName || '').trim();
+      
+      // Tên group được lưu vào relationship (ví dụ "Tập thể lớp 12A4")
+      let relationshipVal = (queryGuestName || '').trim();
+      if (!relationshipVal) {
+        const currentHeading = $('#rsvpHeading')?.textContent || '';
+        if (currentHeading.includes(' · ')) {
+          relationshipVal = currentHeading.split(' · ')[1]?.trim();
+        }
+      }
 
       // Chỉ required trường groupName (sẽ là tên khách), guestSide (mặc định gửi theo link)
       const payload = {
         groupName: guestNameInput,
         guestSide: guestSide,
-        relationship: groupNameParam || (guestSide === 'bride' ? 'Bạn cô dâu' : 'Bạn chú rể'),
+        relationship: relationshipVal || null,
         expectedGuestCount: expectedGuestCount,
         tableNumber: null,
         note: noteText
