@@ -689,6 +689,127 @@ if (wishForm) {
 
 // 8. Xử lý RSVP Form thông thường, danh xưng chung và nhóm khách (group-guest)
 const defaultRsvpForm = $('#rsvpForm');
+const btnDeclineRsvp = $('#btnDeclineRsvp');
+
+async function submitGroupGuest(isAttending) {
+  const nameInputEl = $('#rsvpNameInput');
+  const guestNameInput = (nameInputEl?.value || '').trim();
+  if (!guestNameInput) {
+    showToast('Vui lòng nhập họ và tên của bạn.');
+    if (nameInputEl) nameInputEl.focus();
+    return;
+  }
+
+  const guestSide = role === 'co-dau' ? 'bride' : 'groom';
+  const countInputEl = $('#rsvpCountInput');
+  const countNum = parseInt(countInputEl?.value, 10);
+  const expectedGuestCount = isAttending ? ((!isNaN(countNum) && countNum > 0) ? countNum : 1) : 0;
+  const noteText = isAttending ? null : 'Tiếc quá tôi không tham dự được';
+
+  // Tên group được lưu vào relationship (ví dụ "Tập thể lớp 12A4")
+  let relationshipVal = (queryGuestName || '').trim();
+  if (!relationshipVal) {
+    const currentHeading = $('#rsvpHeading')?.textContent || '';
+    if (currentHeading.includes(' · ')) {
+      relationshipVal = currentHeading.split(' · ')[1]?.trim();
+    }
+  }
+
+  // Chỉ required trường groupName (sẽ là tên khách), guestSide (mặc định gửi theo link)
+  const payload = {
+    groupName: guestNameInput,
+    guestSide: guestSide,
+    relationship: relationshipVal || null,
+    expectedGuestCount: expectedGuestCount,
+    tableNumber: null,
+    note: noteText
+  };
+
+  const submitBtn = $('#rsvpSubmitBtn');
+  const declineBtn = $('#btnDeclineRsvp');
+
+  if (submitBtn) submitBtn.disabled = true;
+  if (declineBtn) declineBtn.disabled = true;
+  if (isAttending && submitBtn) submitBtn.textContent = 'Đang gửi...';
+  if (!isAttending && declineBtn) declineBtn.textContent = 'Đang gửi...';
+
+  let success = false;
+  let errorMsg = '';
+
+  const postUrls = [
+    '/api/v1/family-groups',
+    '/api/backend/api/v1/family-groups',
+    'https://api.minhtc.io.vn/api/v1/family-groups'
+  ];
+
+  for (const url of postUrls) {
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        const resJson = await res.json().catch(() => ({}));
+        if (resJson && resJson.success === false) {
+          errorMsg = resJson.message || 'Không thể lưu thông tin.';
+          continue;
+        }
+        success = true;
+        break;
+      }
+    } catch (err) {
+      errorMsg = err.message || 'Lỗi mạng khi kết nối máy chủ.';
+    }
+  }
+
+  if (submitBtn) {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Xác nhận tham gia';
+  }
+  if (declineBtn) {
+    declineBtn.disabled = false;
+    declineBtn.textContent = 'Tiếc quá tôi không tham dự được';
+  }
+
+  const rsvpStatusEl = $('#rsvpStatus');
+  if (success) {
+    if (rsvpStatusEl) {
+      if (isAttending) {
+        rsvpStatusEl.textContent = `Đã ghi nhận xác nhận tham gia của ${guestNameInput}. Cảm ơn bạn rất nhiều!`;
+      } else {
+        rsvpStatusEl.textContent = `Đã ghi nhận phản hồi của ${guestNameInput}. Cảm ơn bạn đã thông báo!`;
+      }
+      rsvpStatusEl.style.color = '#386641';
+    }
+    showToast(isAttending ? 'Xác nhận tham gia thành công!' : 'Đã ghi nhận phản hồi của bạn!');
+
+    if (defaultRsvpForm) defaultRsvpForm.reset();
+    if (countInputEl) countInputEl.value = '1';
+  } else {
+    if (rsvpStatusEl) {
+      rsvpStatusEl.textContent = errorMsg || 'Gửi phản hồi thất bại. Vui lòng thử lại sau ít phút!';
+      rsvpStatusEl.style.color = '#b91c1c';
+    }
+    showToast('Có lỗi xảy ra, vui lòng thử lại.');
+  }
+}
+
+if (btnDeclineRsvp) {
+  btnDeclineRsvp.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (isGroupGuestMode) {
+      submitGroupGuest(false);
+    } else {
+      showToast('Đã ghi nhận phản hồi của bạn.');
+    }
+  });
+}
+
 if (defaultRsvpForm) {
   defaultRsvpForm.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -696,134 +817,14 @@ if (defaultRsvpForm) {
 
     // Xử lý riêng cho link nhóm khách (/co-dau/group-guest hoặc /chu-re/group-guest)
     if (isGroupGuestMode) {
-      const guestNameInput = (data.name || '').trim();
-      if (!guestNameInput) {
-        showToast('Vui lòng nhập họ và tên của bạn.');
-        return;
-      }
-
-      // Xác định guestSide: mặc định gửi theo link (co-dau -> bride, chu-re -> groom)
-      const guestSide = role === 'co-dau' ? 'bride' : 'groom';
-
-      const countNum = parseInt(data.count, 10);
-      const expectedGuestCount = (!isNaN(countNum) && countNum > 0) ? countNum : 1;
-      const noteText = (data.message || '').trim() || null;
-      
-      // Tên group được lưu vào relationship (ví dụ "Tập thể lớp 12A4")
-      let relationshipVal = (queryGuestName || '').trim();
-      if (!relationshipVal) {
-        const currentHeading = $('#rsvpHeading')?.textContent || '';
-        if (currentHeading.includes(' · ')) {
-          relationshipVal = currentHeading.split(' · ')[1]?.trim();
-        }
-      }
-
-      // Chỉ required trường groupName (sẽ là tên khách), guestSide (mặc định gửi theo link)
-      const payload = {
-        groupName: guestNameInput,
-        guestSide: guestSide,
-        relationship: relationshipVal || null,
-        expectedGuestCount: expectedGuestCount,
-        tableNumber: null,
-        note: noteText
-      };
-
-      const submitBtn = $('#rsvpSubmitBtn') || defaultRsvpForm.querySelector('button[type="submit"]');
-      if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Đang gửi xác nhận...';
-      }
-
-      let success = false;
-      let errorMsg = '';
-
-      const postUrls = [
-        '/api/v1/family-groups',
-        '/api/backend/api/v1/family-groups',
-        'https://api.minhtc.io.vn/api/v1/family-groups'
-      ];
-
-      for (const url of postUrls) {
-        try {
-          const res = await fetch(url, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json'
-            },
-            body: JSON.stringify(payload)
-          });
-
-          if (res.ok) {
-            const resJson = await res.json().catch(() => ({}));
-            if (resJson && resJson.success === false) {
-              errorMsg = resJson.message || 'Không thể lưu thông tin.';
-              continue;
-            }
-            success = true;
-            break;
-          }
-        } catch (err) {
-          errorMsg = err.message || 'Lỗi mạng khi kết nối máy chủ.';
-        }
-      }
-
-      if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Xác nhận';
-      }
-
-      const rsvpStatusEl = $('#rsvpStatus');
-      if (success) {
-        if (rsvpStatusEl) {
-          rsvpStatusEl.textContent = `Đã ghi nhận xác nhận của ${guestNameInput}. Cảm ơn bạn rất nhiều!`;
-          rsvpStatusEl.style.color = '#386641';
-        }
-        showToast('Xác nhận tham dự thành công!');
-
-        // Tự động đẩy lời chúc vào sổ lưu bút nếu khách có để lại lời nhắn
-        if (noteText) {
-          const guestbookUrls = [
-            '/api/backend/api/v1/guestbook',
-            '/api/v1/guestbook',
-            'https://api.minhtc.io.vn/api/v1/guestbook'
-          ];
-          for (const gbUrl of guestbookUrls) {
-            try {
-              const gbRes = await fetch(gbUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ displayName: guestNameInput, message: noteText })
-              });
-              if (gbRes.ok) {
-                setTimeout(fetchBackendGuestbook, 1000);
-                break;
-              }
-            } catch (_) { }
-          }
-        }
-
-        // Reset form nhưng giữ số lượng 1 và khách nhà mặc định
-        defaultRsvpForm.reset();
-        const sideSelect = $('select[name="side"]');
-        if (sideSelect) sideSelect.value = config.defaultSide;
-        const countInput = $('#rsvpCountInput');
-        if (countInput) countInput.value = '1';
-      } else {
-        if (rsvpStatusEl) {
-          rsvpStatusEl.textContent = errorMsg || 'Gửi xác nhận thất bại. Vui lòng thử lại sau ít phút!';
-          rsvpStatusEl.style.color = '#b91c1c';
-        }
-        showToast('Có lỗi xảy ra, vui lòng thử lại.');
-      }
-      return;
+      return submitGroupGuest(true);
     }
 
     localStorage.setItem('minh-hang-rsvp', JSON.stringify({ ...data, submittedAt: new Date().toISOString() }));
     const thankNotice = salutationInfo ? salutationInfo.thankMsg : `Đã ghi nhận xác nhận của ${data.name}. Cảm ơn bạn!`;
     const rsvpStatusEl = $('#rsvpStatus');
     if (rsvpStatusEl) rsvpStatusEl.textContent = thankNotice;
-    showToast('Đã lưu xác nhận tham dự!');
+    showToast('Đã lưu xác nhận tham gia!');
 
     if (data.message && data.message.trim()) {
       fetch('/api/backend/api/v1/guestbook', {

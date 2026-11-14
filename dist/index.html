@@ -299,8 +299,10 @@
           <label><span>Số người tham dự</span><input name="count" id="rsvpCountInput" type="number" min="1" max="10"
               value="1"></label>
         </div>
-        <label><span>Lời nhắn</span><textarea name="message" id="rsvpMessageInput" rows="3"></textarea></label>
-        <button class="btn" type="submit" id="rsvpSubmitBtn">Xác nhận</button>
+        <div class="form__actions" style="display: flex; flex-direction: column; gap: 10px; margin-top: 14px;">
+          <button class="btn" type="submit" id="rsvpSubmitBtn" style="margin-top: 0; width: 100%;">Xác nhận tham gia</button>
+          <button class="btn btn--outline" type="button" id="btnDeclineRsvp" style="margin-top: 0; width: 100%;">Tiếc quá tôi không tham dự được</button>
+        </div>
         <p class="form__status" id="rsvpStatus" role="status"></p>
       </form>
     </section>
