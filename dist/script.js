@@ -703,7 +703,8 @@ async function submitGroupGuest(isAttending) {
   const guestSide = role === 'co-dau' ? 'bride' : 'groom';
   const countInputEl = $('#rsvpCountInput');
   const countNum = parseInt(countInputEl?.value, 10);
-  const expectedGuestCount = isAttending ? ((!isNaN(countNum) && countNum > 0) ? countNum : 1) : 0;
+  // Backend yêu cầu expectedGuestCount tối thiểu là 1
+  const expectedGuestCount = isAttending ? ((!isNaN(countNum) && countNum > 0) ? countNum : 1) : 1;
   const noteText = isAttending ? null : 'Tiếc quá tôi không tham dự được';
 
   // Tên group được lưu vào relationship (ví dụ "Tập thể lớp 12A4")
