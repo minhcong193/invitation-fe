@@ -188,6 +188,7 @@ let role = 'chu-re';
 let isInviteMode = false;
 let isCustomMode = false;
 let isFamilyMode = false;
+let isGroupGuestMode = false;
 let inviteCode = null;
 let salutationKey = null;
 let familyCode = null;
@@ -196,7 +197,10 @@ if (pathSegments.length > 0) {
   const p0 = normalizeSalutationKey(pathSegments[0]);
   const p1 = pathSegments[1] ? normalizeSalutationKey(pathSegments[1]) : '';
 
-  if (p0 === 'family' || p1 === 'family') {
+  if (p0 === 'group-guest' || p1 === 'group-guest') {
+    isGroupGuestMode = true;
+    role = (p0 === 'co-dau') ? 'co-dau' : 'chu-re';
+  } else if (p0 === 'family' || p1 === 'family') {
     role = 'chu-re';
     isFamilyMode = true;
   } else if (p0 === 'co-dau') {
@@ -241,7 +245,7 @@ if (pathSegments.length > 0) {
 }
 
 // Kiểm tra query parameter nếu không có trên path (?for=bac hoặc ?salutation=bac)
-if (!salutationKey && !isInviteMode) {
+if (!salutationKey && !isInviteMode && !isGroupGuestMode) {
   const qSalt = searchParams.get('for') || searchParams.get('salutation');
   if (qSalt) {
     const candidateKey = normalizeSalutationKey(qSalt);
@@ -683,12 +687,138 @@ if (wishForm) {
   });
 }
 
-// 8. Xử lý RSVP Form thông thường và danh xưng chung
+// 8. Xử lý RSVP Form thông thường, danh xưng chung và nhóm khách (group-guest)
 const defaultRsvpForm = $('#rsvpForm');
 if (defaultRsvpForm) {
-  defaultRsvpForm.addEventListener('submit', (event) => {
+  defaultRsvpForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     const data = Object.fromEntries(new FormData(event.currentTarget));
+
+    // Xử lý riêng cho link nhóm khách (/co-dau/group-guest hoặc /chu-re/group-guest)
+    if (isGroupGuestMode) {
+      const guestNameInput = (data.name || '').trim();
+      if (!guestNameInput) {
+        showToast('Vui lòng nhập họ và tên của bạn.');
+        return;
+      }
+
+      // Xác định guestSide: mặc định gửi theo link (co-dau -> bride, chu-re -> groom)
+      let guestSide = role === 'co-dau' ? 'bride' : 'groom';
+      if (data.side) {
+        const sideVal = String(data.side).toLowerCase();
+        if (sideVal.includes('dâu') || sideVal === 'bride') {
+          guestSide = 'bride';
+        } else if (sideVal.includes('rể') || sideVal === 'groom') {
+          guestSide = 'groom';
+        }
+      }
+
+      const countNum = parseInt(data.count, 10);
+      const expectedGuestCount = (!isNaN(countNum) && countNum > 0) ? countNum : 1;
+      const noteText = (data.message || '').trim() || null;
+      const groupNameParam = (queryGuestName || '').trim();
+
+      // Chỉ required trường groupName (sẽ là tên khách), guestSide (mặc định gửi theo link)
+      const payload = {
+        groupName: guestNameInput,
+        guestSide: guestSide,
+        relationship: groupNameParam || (guestSide === 'bride' ? 'Bạn cô dâu' : 'Bạn chú rể'),
+        expectedGuestCount: expectedGuestCount,
+        tableNumber: null,
+        note: noteText
+      };
+
+      const submitBtn = $('#rsvpSubmitBtn') || defaultRsvpForm.querySelector('button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Đang gửi xác nhận...';
+      }
+
+      let success = false;
+      let errorMsg = '';
+
+      const postUrls = [
+        '/api/v1/family-groups',
+        '/api/backend/api/v1/family-groups',
+        'https://api.minhtc.io.vn/api/v1/family-groups'
+      ];
+
+      for (const url of postUrls) {
+        try {
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify(payload)
+          });
+
+          if (res.ok) {
+            const resJson = await res.json().catch(() => ({}));
+            if (resJson && resJson.success === false) {
+              errorMsg = resJson.message || 'Không thể lưu thông tin.';
+              continue;
+            }
+            success = true;
+            break;
+          }
+        } catch (err) {
+          errorMsg = err.message || 'Lỗi mạng khi kết nối máy chủ.';
+        }
+      }
+
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Xác nhận';
+      }
+
+      const rsvpStatusEl = $('#rsvpStatus');
+      if (success) {
+        if (rsvpStatusEl) {
+          rsvpStatusEl.textContent = `Đã ghi nhận xác nhận của ${guestNameInput}. Cảm ơn bạn rất nhiều!`;
+          rsvpStatusEl.style.color = '#386641';
+        }
+        showToast('Xác nhận tham dự thành công!');
+
+        // Tự động đẩy lời chúc vào sổ lưu bút nếu khách có để lại lời nhắn
+        if (noteText) {
+          const guestbookUrls = [
+            '/api/backend/api/v1/guestbook',
+            '/api/v1/guestbook',
+            'https://api.minhtc.io.vn/api/v1/guestbook'
+          ];
+          for (const gbUrl of guestbookUrls) {
+            try {
+              const gbRes = await fetch(gbUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ displayName: guestNameInput, message: noteText })
+              });
+              if (gbRes.ok) {
+                setTimeout(fetchBackendGuestbook, 1000);
+                break;
+              }
+            } catch (_) { }
+          }
+        }
+
+        // Reset form nhưng giữ số lượng 1 và khách nhà mặc định
+        defaultRsvpForm.reset();
+        const sideSelect = $('select[name="side"]');
+        if (sideSelect) sideSelect.value = config.defaultSide;
+        const countInput = $('#rsvpCountInput');
+        if (countInput) countInput.value = '1';
+      } else {
+        if (rsvpStatusEl) {
+          rsvpStatusEl.textContent = errorMsg || 'Gửi xác nhận thất bại. Vui lòng thử lại sau ít phút!';
+          rsvpStatusEl.style.color = '#b91c1c';
+        }
+        showToast('Có lỗi xảy ra, vui lòng thử lại.');
+      }
+      return;
+    }
+
     localStorage.setItem('minh-hang-rsvp', JSON.stringify({ ...data, submittedAt: new Date().toISOString() }));
     const thankNotice = salutationInfo ? salutationInfo.thankMsg : `Đã ghi nhận xác nhận của ${data.name}. Cảm ơn bạn!`;
     const rsvpStatusEl = $('#rsvpStatus');
@@ -1250,6 +1380,76 @@ if (isFamilyMode) {
   // Bỏ form xác nhận tham dự đối với link gia đình
   if (defaultRsvpForm) {
     defaultRsvpForm.style.display = 'none';
+  }
+}
+
+// =========================================================================
+// 11d. XỬ LÝ LINK NHÓM KHÁCH MỜI (/co-dau/group-guest?name={group} hoặc /chu-re/group-guest?name={group})
+// Hiển thị form sẵn để khách trong group tự điền họ tên, số lượng (mặc định = 1), khách nhà mặc định theo link
+// =========================================================================
+if (isGroupGuestMode) {
+  // Ẩn các hộp khách mời khác
+  if (rsvpGuestBox) rsvpGuestBox.style.display = 'none';
+  if (rsvpFamilyBox) rsvpFamilyBox.style.display = 'none';
+  if (rsvpSalutationBox) rsvpSalutationBox.style.display = 'none';
+
+  const groupDisplayName = (queryGuestName || 'Quý khách').trim();
+
+  // 1. Màn hình mở thiệp (Opening screen)
+  const guestEl = $('#guestName');
+  if (guestEl) guestEl.textContent = groupDisplayName.slice(0, 60);
+
+  const openEyebrow = $('#openingEyebrow') || $('#opening .eyebrow');
+  if (openEyebrow) openEyebrow.textContent = 'Trân trọng kính mời';
+
+  const openCopy = $('#openingCopy') || $('#opening .opening__copy');
+  if (openCopy) openCopy.textContent = 'tới chung vui trong ngày trọng đại của';
+
+  // 2. Thẻ Invitation Section
+  const invEyebrow = $('#invitationEyebrow') || $('.invitation .eyebrow');
+  if (invEyebrow) invEyebrow.textContent = 'Trân trọng kính mời';
+
+  const invHeading = $('#invitationHeading') || $('.invitation .script');
+  if (invHeading) {
+    invHeading.innerHTML = 'Cùng chung vui với hai gia đình chúng tôi';
+  }
+
+  const invLead = $('#invitationLead') || $('.invitation .lead');
+  if (invLead) {
+    invLead.textContent = queryGuestName
+      ? `Sự hiện diện của các thành viên trong ${queryGuestName} là niềm vinh hạnh to lớn của hai gia đình chúng tôi trong ngày trọng đại này!`
+      : 'Sự hiện diện của quý khách là niềm vinh hạnh to lớn của hai gia đình chúng tôi trong ngày trọng đại này.';
+  }
+
+  // 3. Khối RSVP: Hiển thị form sẵn để khách tự điền
+  const rsvpEyebrow = $('#rsvp .eyebrow');
+  if (rsvpEyebrow) rsvpEyebrow.textContent = 'Xác nhận tham dự';
+
+  const rsvpHeading = $('#rsvpHeading');
+  if (rsvpHeading) {
+    rsvpHeading.textContent = queryGuestName ? `Xác nhận tham dự · ${queryGuestName}` : 'Xác nhận tham dự';
+  }
+
+  const rsvpLead = $('#rsvpLead');
+  if (rsvpLead) {
+    rsvpLead.textContent = 'Vui lòng điền họ tên và số lượng người tham dự để gia đình chuẩn bị đón tiếp chu đáo nhất.';
+  }
+
+  // Đảm bảo form hiển thị sẵn
+  if (defaultRsvpForm) {
+    defaultRsvpForm.style.display = 'block';
+  }
+
+  // Mặc định chọn số lượng = 1
+  const countInput = $('#rsvpCountInput');
+  if (countInput) {
+    countInput.value = '1';
+  }
+
+  // Mặc định chọn phía nhà (Cô dâu hoặc Chú rể theo link)
+  const sideSelect = $('select[name="side"]');
+  if (sideSelect) {
+    sideSelect.value = config.defaultSide;
   }
 }
 
