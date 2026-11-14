@@ -478,7 +478,7 @@ const wishMarqueeWrapper = $('#wishMarqueeWrapper');
 // Xóa sạch cache localStorage cũ nếu từng lưu
 try {
   localStorage.removeItem('minh-hang-wishes');
-} catch (_) {}
+} catch (_) { }
 
 let liveWishes = [];
 let allWishesList = [];
@@ -638,7 +638,7 @@ async function fetchBackendGuestbook() {
           return;
         }
       }
-    } catch (_) {}
+    } catch (_) { }
   }
 }
 
@@ -678,7 +678,7 @@ if (wishForm) {
           setTimeout(fetchBackendGuestbook, 1000);
           break;
         }
-      } catch (_) {}
+      } catch (_) { }
     }
   });
 }
@@ -784,7 +784,8 @@ if (isInviteMode && inviteCode) {
     });
   }
 
-  let currentGuestName = queryGuestName || formatSlug(inviteCode);
+  const preRenderedName = ($('#guestName')?.textContent || '').trim();
+  let currentGuestName = queryGuestName || (preRenderedName && preRenderedName !== 'Quý khách' ? preRenderedName : '') || formatSlug(inviteCode);
   if (currentGuestName) {
     const guestEl = $('#guestName');
     if (guestEl) guestEl.textContent = currentGuestName.slice(0, 60);
@@ -1365,7 +1366,7 @@ async function requestVietQrGenerate(payload) {
         const json = await res.json();
         return json.data || json;
       }
-    } catch (_) {}
+    } catch (_) { }
   }
   return null;
 }
@@ -1471,7 +1472,7 @@ if (btnCopyGiftAcc) {
         if (iconCopy) iconCopy.style.display = 'block';
         if (iconCheck) iconCheck.style.display = 'none';
       }, 2000);
-    } catch (_) {}
+    } catch (_) { }
   });
 }
 
