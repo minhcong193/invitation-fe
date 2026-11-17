@@ -166,6 +166,22 @@ const genericSalutations = {
   }
 };
 
+// Hàm giải mã URL an toàn (hỗ trợ nhiều cấp encode khi copy link từ Messenger, Zalo...)
+function safeDeepDecode(str) {
+  if (!str) return '';
+  let prev = String(str).trim();
+  for (let i = 0; i < 5; i++) {
+    try {
+      const decoded = decodeURIComponent(prev);
+      if (decoded === prev) break;
+      prev = decoded;
+    } catch (_) {
+      break;
+    }
+  }
+  return prev.trim();
+}
+
 function normalizeSalutationKey(key) {
   if (!key) return null;
   return key.toLowerCase()
@@ -362,7 +378,8 @@ function formatSlug(slug) {
 }
 
 // Lấy tên khách từ query param (?to= hoặc ?guest= hoặc ?name=)
-let queryGuestName = searchParams.get('to') || searchParams.get('guest') || searchParams.get('name');
+const rawGuestParam = searchParams.get('to') || searchParams.get('guest') || searchParams.get('name');
+let queryGuestName = safeDeepDecode(rawGuestParam);
 if (queryGuestName) {
   let displayGuestName = queryGuestName;
   if (salutationInfo) {

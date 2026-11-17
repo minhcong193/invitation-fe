@@ -100,9 +100,25 @@
   </main>
 
   <script>
+    // Hàm giải mã URL an toàn (hỗ trợ nhiều cấp encode khi copy link từ Messenger, Zalo...)
+    function safeDeepDecode(str) {
+      if (!str) return '';
+      let prev = String(str).trim();
+      for (let i = 0; i < 5; i++) {
+        try {
+          const decoded = decodeURIComponent(prev);
+          if (decoded === prev) break;
+          prev = decoded;
+        } catch (_) {
+          break;
+        }
+      }
+      return prev.trim();
+    }
+
     // 1. Lấy tên khách từ query param (?name= hoặc ?to= hoặc ?guest=)
     const params = new URLSearchParams(window.location.search);
-    const guestParam = params.get('name') || params.get('to') || params.get('guest');
+    const guestParam = safeDeepDecode(params.get('name') || params.get('to') || params.get('guest') || '');
     if (guestParam) {
       document.getElementById('guestName').textContent = guestParam.slice(0, 60);
     }
@@ -192,7 +208,7 @@
     }
     if (targetKey === 'family' || segments.includes('family')) {
       const familyDefault = 'U, Cô, Dì, Chú, Bác, Anh, Em, Cháu';
-      const customName = (urlParams.get('name') || urlParams.get('to') || urlParams.get('guest') || familyDefault).trim();
+      const customName = safeDeepDecode(urlParams.get('name') || urlParams.get('to') || urlParams.get('guest') || familyDefault);
       document.getElementById('greetingEyebrow').textContent = 'Gia đình con Ngô Hường Tạ Thành trân trọng kính mời';
       const gEl = document.getElementById('guestName');
       gEl.textContent = customName;
@@ -202,12 +218,12 @@
       }
       document.getElementById('greetingCopy').textContent = 'tới chung vui trong ngày trọng đại của hai cháu';
     } else if (targetKey === 'group-guest' || segments.includes('group-guest')) {
-      const groupName = (urlParams.get('name') || urlParams.get('to') || urlParams.get('guest') || 'Quý khách').trim();
+      const groupName = safeDeepDecode(urlParams.get('name') || urlParams.get('to') || urlParams.get('guest') || 'Quý khách');
       document.getElementById('greetingEyebrow').textContent = 'Trân trọng kính mời';
       document.getElementById('guestName').textContent = groupName;
       document.getElementById('greetingCopy').textContent = 'tới chung vui trong ngày trọng đại của hai gia đình chúng tôi';
     } else if (targetKey === 'cus') {
-      const customName = (urlParams.get('name') || urlParams.get('to') || urlParams.get('guest') || 'Quý khách').trim();
+      const customName = safeDeepDecode(urlParams.get('name') || urlParams.get('to') || urlParams.get('guest') || 'Quý khách');
       document.getElementById('greetingEyebrow').textContent = 'Trân trọng kính mời';
       document.getElementById('guestName').textContent = customName;
       document.getElementById('greetingCopy').textContent = 'tới chung vui trong ngày trọng đại của hai gia đình chúng tôi';
@@ -221,7 +237,7 @@
       const item = salutationMap[cleanKey];
       if (item) {
         let name = item.title;
-        const customName = urlParams.get('name');
+        const customName = safeDeepDecode(urlParams.get('name') || '');
         if (customName) {
           name = customName.toLowerCase().startsWith(item.title.toLowerCase()) ? customName : `${item.title} ${customName}`;
         }

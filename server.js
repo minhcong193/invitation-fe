@@ -220,9 +220,26 @@ function formatSlugName(slug) {
   }
 }
 
+// Hàm giải mã URL an toàn (hỗ trợ nhiều cấp encode khi copy link từ Messenger, Zalo...)
+function safeDeepDecode(str) {
+  if (!str) return '';
+  let prev = String(str).trim();
+  for (let i = 0; i < 5; i++) {
+    try {
+      const decoded = decodeURIComponent(prev);
+      if (decoded === prev) break;
+      prev = decoded;
+    } catch (_) {
+      break;
+    }
+  }
+  return prev.trim();
+}
+
 // Nhận diện tên khách mời: tự động kết hợp danh xưng từ URL slug với tên query
 function resolveGuestName(req) {
-  const queryName = (req.query.name || req.query.to || '').trim();
+  const rawQuery = req.query.name || req.query.to || req.query.guest || '';
+  const queryName = safeDeepDecode(rawQuery);
   const pathParts = req.path.toLowerCase().split('/').filter(Boolean);
 
   // Nếu là route family (/family hoặc /chu-re/family)
@@ -252,7 +269,8 @@ function resolveGuestName(req) {
 
 // Nhận diện tên khách mời bất đồng bộ (tìm cả trong database theo inviteCode)
 async function resolveGuestNameAsync(req) {
-  const queryName = (req.query.name || req.query.to || '').trim();
+  const rawQuery = req.query.name || req.query.to || req.query.guest || '';
+  const queryName = safeDeepDecode(rawQuery);
   const pathParts = req.path.toLowerCase().split('/').filter(Boolean);
 
   // 1. Nếu là route family
@@ -360,7 +378,7 @@ function resolveWeddingDate(req) {
     let dynamicTitle;
 
     if (isFamilyPath) {
-      const targetName = (req.query.name || req.query.to || '').trim() || 'U, Cô, Dì, Chú, Bác, Anh, Em, Cháu';
+      const targetName = safeDeepDecode(req.query.name || req.query.to || req.query.guest || '') || 'U, Cô, Dì, Chú, Bác, Anh, Em, Cháu';
       dynamicTitle = `Gia đình con Ngô Hường Tạ Thành kính mời | Thiệp cưới Công Minh & Thu Hằng`;
       dynamicDesc = `Gia đình con Ngô Hường Tạ Thành trân trọng kính mời ${targetName} tới chung vui trong ngày trọng đại của Công Minh & Thu Hằng — 28.11.2026`;
     } else {
