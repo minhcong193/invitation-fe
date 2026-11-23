@@ -1612,7 +1612,6 @@ let currentQrLoadedSrc = null;
 
 async function prepareGiftQr(guestApiData = null) {
   if (guestApiData) latestGiftGuestData = guestApiData;
-  const description = computeGiftDescription(latestGiftGuestData);
 
   // Chọn cấu hình ngân hàng theo role:
   // /chu-re chỉ hiển thị QR chú rể, /co-dau chỉ hiển thị QR cô dâu
@@ -1641,11 +1640,19 @@ async function prepareGiftQr(guestApiData = null) {
     bankBin: targetConfig.bankBin,
     accountNumber: targetConfig.accountNumber,
     accountName: targetConfig.accountName,
-    template: targetConfig.template,
-    description: description
+    template: targetConfig.template
   };
 
-  const fallbackUrl = `https://img.vietqr.io/image/${payload.bankBin}-${payload.accountNumber}-${payload.template}.png?accountName=${encodeURIComponent(payload.accountName)}&addInfo=${encodeURIComponent(payload.description)}`;
+  // Ngoài /invite thì các path khác khi call POST /api/v1/qr/vietqr/generate không truyền description nữa
+  if (isInviteMode && inviteCode) {
+    const description = computeGiftDescription(latestGiftGuestData);
+    if (description) {
+      payload.description = description;
+    }
+  }
+
+  const fallbackAddInfo = payload.description ? `&addInfo=${encodeURIComponent(payload.description)}` : '';
+  const fallbackUrl = `https://img.vietqr.io/image/${payload.bankBin}-${payload.accountNumber}-${payload.template}.png?accountName=${encodeURIComponent(payload.accountName)}${fallbackAddInfo}`;
 
   const imgEl = $('#giftModalQrImg');
   const loadingEl = $('#giftModalLoading');
