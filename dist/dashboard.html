@@ -205,8 +205,12 @@
           <span class="tab-badge" id="badgeTablesCount">0</span>
         </button>
         <button class="tab-btn" data-tab="tabSalutations">
-          <span>💌 Link Mời Theo Danh Xưng (Bác, Chú, Cô, Anh, Chị, Em, Gia đình...)</span>
-          <span class="tab-badge" style="background:#8b5cf6;">13</span>
+          <span>✨ Mẫu theo danh xưng (Bác, Chú, Cô, Anh, Chị, Em, Gia đình...)</span>
+          <span class="tab-badge" style="background:#8b5cf6;">14</span>
+        </button>
+        <button class="tab-btn" data-tab="tabPaths">
+          <span>🗺️ Sơ đồ tất cả Path & Thành phần</span>
+          <span class="tab-badge" style="background:#0284c7;">9 nhóm</span>
         </button>
       </nav>
 
@@ -393,7 +397,7 @@
       <section class="tab-pane" id="tabSalutations">
         <div class="toolbar" style="margin-bottom:16px;">
           <p style="font-size:14px; color:#475569; margin:0;">
-            Danh sách 13 đường dẫn thiệp cưới mời theo danh xưng chung để gửi qua Zalo, Messenger, SMS cho từng đối tượng (có thể thêm <code>?name=Tên</code> để thêm tên riêng):
+            Danh sách 14 đường dẫn thiệp cưới mời theo danh xưng chung để gửi qua Zalo, Messenger, SMS cho từng đối tượng (có thể thêm <code>?name=Tên</code> để thêm tên riêng):
           </p>
         </div>
 
@@ -412,6 +416,46 @@
               <!-- Render dynamically in dashboard.js -->
             </tbody>
           </table>
+        </div>
+      </section>
+
+      <!-- TAB 6: SƠ ĐỒ TOÀN BỘ ĐƯỜNG DẪN & THÀNH PHẦN (PATH GUIDE & COMPONENTS) -->
+      <section class="tab-pane" id="tabPaths">
+        <div class="toolbar" style="margin-bottom:20px; display:block;">
+          <h3 style="margin:0 0 6px 0; font-size:16px; color:#0f172a;">
+            🗺️ Bảng tổng hợp các đường dẫn (Paths), Thành phần hiển thị & Hướng dẫn sử dụng
+          </h3>
+          <p style="font-size:13px; color:#64748b; margin:0; line-height:1.5;">
+            Chi tiết 9 nhóm đường dẫn trong hệ thống thiệp cưới. Mỗi loại đường dẫn được thiết kế tối ưu riêng cho từng đối tượng khách mời (cá nhân, nhóm bạn, họ hàng...) với các thành phần giao diện tương ứng.
+          </p>
+        </div>
+
+        <!-- 1. BẢNG MA TRẬN THÀNH PHẦN HIỂN THỊ (COMPONENTS MATRIX) -->
+        <div class="table-responsive" style="margin-bottom:24px;">
+          <table>
+            <thead>
+              <tr>
+                <th style="min-width:210px;">Loại đường dẫn (Path Pattern)</th>
+                <th style="min-width:180px;">Đối tượng & Mục đích</th>
+                <th style="text-align:center; min-width:85px;">Mở thiệp</th>
+                <th style="text-align:center; min-width:100px;">Đếm ngược & Lịch</th>
+                <th style="text-align:center; min-width:180px;">Form xác nhận (RSVP)</th>
+                <th style="text-align:center; min-width:130px;">Mừng cưới VietQR</th>
+                <th style="text-align:center; min-width:95px;">Sổ lưu bút</th>
+              </tr>
+            </thead>
+            <tbody id="pathsMatrixBody">
+              <!-- Render dynamically in dashboard.js -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 2. HƯỚNG DẪN CHI TIẾT & LINK THỬ CHO TỪNG NHÓM (DETAILED GUIDE CARDS) -->
+        <h4 style="margin:20px 0 12px 0; font-size:15px; color:#1e293b;">
+          📖 Hướng dẫn chi tiết cách dùng & Thành phần của từng Path
+        </h4>
+        <div id="pathsDetailCards" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap:18px;">
+          <!-- Render dynamically in dashboard.js -->
         </div>
       </section>
     </div>

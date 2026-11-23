@@ -653,10 +653,12 @@ $('#formAddGuest')?.addEventListener('submit', async (e) => {
   btn.textContent = 'Tạo khách mời';
 
   if (res && res.success !== false) {
-    showToast('Tạo khách mời thành công!');
+    showToast('Tạo khách mời thành công! Đang tải lại...');
     closeModal('modalAddGuest');
     e.currentTarget.reset();
-    loadAllData();
+    setTimeout(() => {
+      window.location.reload();
+    }, 600);
   } else {
     alert(res?.message || 'Lỗi khi tạo khách mời.');
   }
@@ -722,10 +724,12 @@ $('#formAddFamily')?.addEventListener('submit', async (e) => {
   btn.textContent = 'Tạo nhóm gia đình';
 
   if (res && res.success !== false) {
-    showToast('Tạo nhóm gia đình thành công!');
+    showToast('Tạo nhóm gia đình thành công! Đang tải lại...');
     closeModal('modalAddFamily');
     e.currentTarget.reset();
-    loadAllData();
+    setTimeout(() => {
+      window.location.reload();
+    }, 600);
   } else {
     alert(res?.message || 'Lỗi khi tạo nhóm gia đình.');
   }
@@ -887,8 +891,10 @@ $('#formImportGuest')?.addEventListener('submit', async (e) => {
         ` : ''}
       `;
       resultCard.style.display = 'block';
-      showToast(`Import xong: ${data.successCount} thành công!`);
-      loadAllData();
+      showToast(`Import xong: ${data.successCount} thành công! Đang tải lại...`);
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } else {
       resultCard.className = 'import-result-card danger';
       resultCard.textContent = res?.message || 'Có lỗi xảy ra khi import file Excel.';
@@ -950,8 +956,10 @@ $('#formImportFamily')?.addEventListener('submit', async (e) => {
         ` : ''}
       `;
       resultCard.style.display = 'block';
-      showToast(`Import xong: ${data.successCount} thành công!`);
-      loadAllData();
+      showToast(`Import xong: ${data.successCount} thành công! Đang tải lại...`);
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } else {
       resultCard.className = 'import-result-card danger';
       resultCard.textContent = res?.message || 'Có lỗi xảy ra khi import file Excel.';
@@ -1159,6 +1167,388 @@ function renderSalutationsTable() {
   }).join('');
 }
 
+// =========================================================================
+// 12. SƠ ĐỒ TOÀN BỘ ĐƯỜNG DẪN & THÀNH PHẦN (TAB 6)
+// =========================================================================
+const pathGuideItems = [
+  {
+    id: 'invite',
+    badge: 'Định danh cá nhân',
+    badgeClass: 'badge-groom',
+    name: 'Khách mời cá nhân có mã mời (Individual Invite)',
+    pathPattern: '/chu-re/invite/{inviteCode}',
+    altPathPattern: '/co-dau/invite/{inviteCode}',
+    demoGroom: '/chu-re/invite/demo',
+    demoBride: '/co-dau/invite/demo',
+    description: 'Thiệp mời cá nhân hóa cho từng khách mời riêng biệt được tạo trong cơ sở dữ liệu.',
+    usage: 'Tạo khách mời ở Tab 1 (hoặc import Excel), sau đó bấm nút Copy Link riêng của từng khách để gửi qua Zalo / Messenger / SMS.',
+    components: {
+      opening: true,
+      countdown: true,
+      rsvp: 'Form cá nhân (Có nút Tham dự / Bận - Tự khóa sau khi gửi)',
+      qr: 'Có (Kèm description tên khách)',
+      guestbook: true
+    },
+    included: [
+      'Tên khách mời định danh chính xác từ Database',
+      'Màn mở thiệp, Đếm ngược ngày cưới & Câu chuyện tình yêu',
+      'Lịch trình & Bản đồ riêng (Nhà trai ngày 28.11 / Nhà gái ngày 29.11)',
+      'Form RSVP tương tác trực tiếp (Call PUT /api/v1/guests/invite/{code}/rsvp)',
+      'Tự động khóa form sau khi khách xác nhận (không cho gửi đè)',
+      'Popup mừng cưới VietQR kèm tên khách trong nội dung chuyển khoản'
+    ],
+    excluded: [
+      'Không cho phép sửa lại form sau khi đã xác nhận thành công'
+    ]
+  },
+  {
+    id: 'group-guest',
+    badge: 'Tập thể có form',
+    badgeClass: 'badge-bride',
+    name: 'Nhóm khách mời tự điền (Group Guest)',
+    pathPattern: '/chu-re/group-guest?name={Tên_Nhóm}',
+    altPathPattern: '/co-dau/group-guest?name={Tên_Nhóm}',
+    demoGroom: '/chu-re/group-guest?name=Hội+Bạn+Thân',
+    demoBride: '/co-dau/group-guest?name=Tập+Thể+Lớp',
+    description: 'Thiệp mời chung cho một tập thể, hội nhóm (lớp học, phòng ban, câu lạc bộ...).',
+    usage: 'Tạo link kèm ?name={Tên nhóm} rồi gửi vào nhóm chat. Từng người trong nhóm tự mở link, điền họ tên, số lượng tham dự và bấm xác nhận.',
+    components: {
+      opening: true,
+      countdown: true,
+      rsvp: 'Form tự do (Họ tên + Số lượng + 2 nút Xác nhận/Từ chối)',
+      qr: 'Có (Không truyền description)',
+      guestbook: true
+    },
+    included: [
+      'Tên nhóm hiển thị nổi bật trên thiệp mời (?name=...)',
+      'Form tự điền sẵn: Họ tên (bắt buộc) & Số lượng người (mặc định 1)',
+      'Nút "Xác nhận tham gia" & Nút "Tiếc quá tôi không tham dự được"',
+      'Dữ liệu lưu tự động vào POST /api/v1/family-groups với relationship = Tên nhóm',
+      'Popup mừng cưới VietQR',
+      'Tự động giải mã an toàn khi link bị copy lặp mã hóa qua Messenger/Zalo'
+    ],
+    excluded: [
+      'Không truyền description trong mã QR (để khách tự nhập nội dung tùy ý)',
+      'Không cần chọn bên khách (tự động gắn theo link /chu-re hay /co-dau)'
+    ]
+  },
+  {
+    id: 'friend',
+    badge: 'Bạn bè không QR',
+    badgeClass: 'badge-attending',
+    name: 'Đường dẫn Bạn bè (Friend - Ẩn hoàn toàn QR)',
+    pathPattern: '/chu-re/friend',
+    altPathPattern: '/co-dau/friend',
+    demoGroom: '/chu-re/friend?name=Bạn+Cấp+3',
+    demoBride: '/co-dau/friend?name=Bạn+Đại+Học',
+    description: 'Dành riêng cho bạn bè: Có đầy đủ form xác nhận nhưng ẨN HOÀN TOÀN nút mừng cưới QR.',
+    usage: 'Gửi cho bạn bè thân thiết khi chỉ muốn mời tham dự và thống kê số lượng khách, không muốn hiển thị thông tin tài khoản ngân hàng.',
+    components: {
+      opening: true,
+      countdown: true,
+      rsvp: 'Form tự do (Họ tên + Số lượng + 2 nút Xác nhận/Từ chối)',
+      qr: 'KHÔNG CÓ (Ẩn hoàn toàn nút QR)',
+      guestbook: true
+    },
+    included: [
+      'Hiển thị tên bạn bè (mặc định "Bạn bè" hoặc ?name={Tên})',
+      'Form tự điền tương tự /group-guest (Lưu vào /api/v1/family-groups)',
+      'Đếm ngược ngày cưới, Story, Album ảnh cưới, Sơ đồ địa điểm',
+      'Sổ lưu bút gửi lời chúc chúc phúc cô dâu chú rể'
+    ],
+    excluded: [
+      'KHÔNG CÓ nút Quà mừng cưới (Ẩn hoàn toàn khối #weddingGift)',
+      'KHÔNG CÓ popup mã VietQR tài khoản ngân hàng'
+    ]
+  },
+  {
+    id: 'family-id',
+    badge: 'Họ hàng theo bàn',
+    badgeClass: 'badge-warning',
+    name: 'Nhóm họ hàng có sẵn bàn tiệc (Family Group)',
+    pathPattern: '/chu-re/{id}',
+    altPathPattern: '/co-dau/{id}',
+    demoGroom: '/chu-re/1',
+    demoBride: '/co-dau/2',
+    description: 'Thiệp mời họ hàng hiển thị thông tin số lượng khách và vị trí bàn tiệc đã xếp sẵn.',
+    usage: 'Tạo nhóm họ hàng ở Tab 2, copy link có ID nhóm gửi cho người đại diện gia đình (ví dụ Bác, Chú). Khách mở thiệp sẽ thấy ngay bàn tiệc của mình.',
+    components: {
+      opening: true,
+      countdown: true,
+      rsvp: 'Không có (Chỉ hiện thiệp mời trang trọng)',
+      qr: 'Có (Không truyền description)',
+      guestbook: true
+    },
+    included: [
+      'Tên nhóm gia đình & mối quan hệ lấy từ Database',
+      'Chip hiển thị Vị trí bàn tiệc (ví dụ Bàn số 01)',
+      'Chip hiển thị Số lượng khách dự kiến',
+      'Lời chào đón trang trọng từ hai gia đình',
+      'Nút Quà mừng cưới VietQR & Sổ lưu bút'
+    ],
+    excluded: [
+      'KHÔNG CÓ form xác nhận tham dự (chỉ xem thông tin)'
+    ]
+  },
+  {
+    id: 'family',
+    badge: 'Đại gia đình',
+    badgeClass: 'badge-neutral',
+    name: 'Thiệp họ hàng chung (Family)',
+    pathPattern: '/chu-re/family',
+    altPathPattern: '/co-dau/family',
+    demoGroom: '/chu-re/family',
+    demoBride: '/co-dau/family',
+    description: 'Thiệp mời mang danh nghĩa của bố mẹ: "Gia đình con Ngô Hường Tạ Thành trân trọng kính mời".',
+    usage: 'Gửi vào các nhóm họ hàng nội/ngoại để kính mời đại gia đình. Có thể kèm ?name={Tên} để chỉ định người nhận.',
+    components: {
+      opening: true,
+      countdown: true,
+      rsvp: 'Không có (Thiệp mời trang trọng dòng họ)',
+      qr: 'Có',
+      guestbook: true
+    },
+    included: [
+      'Xưng hô đại gia đình: "Gia đình con Ngô Hường Tạ Thành"',
+      'Mời mặc định: "U, Cô, Dì, Chú, Bác, Anh, Em, Cháu" (hoặc ?name=...)',
+      'Thiệp mời trang trọng gia đình',
+      'Quà mừng cưới & Sổ lưu bút'
+    ],
+    excluded: [
+      'KHÔNG CÓ form xác nhận tham dự'
+    ]
+  },
+  {
+    id: 'salutation',
+    badge: 'Danh xưng',
+    badgeClass: 'badge-neutral',
+    name: 'Mẫu theo danh xưng chung (Salutations)',
+    pathPattern: '/chu-re/{anh|chi|em|bac|chu|co|chau|gia-dinh-...}',
+    altPathPattern: '/co-dau/{slug}',
+    demoGroom: '/chu-re/anh?name=Minh',
+    demoBride: '/co-dau/chi?name=Lan',
+    description: '14 mẫu thiệp mời chuẩn mực văn hóa Việt theo từng vai vế (Anh, Chị, Em, Cô, Chú, Bác, Gia đình...).',
+    usage: 'Xem danh sách ở Tab 5, copy link theo vai vế phù hợp gửi cho khách. Ghép thêm ?name=Tên để tạo lời mời tự nhiên (ví dụ /chu-re/chi?name=Lan -> "Kính mời Chị Lan").',
+    components: {
+      opening: true,
+      countdown: true,
+      rsvp: 'Không có (Thiệp mời trang trọng theo vai vế)',
+      qr: 'Có (Không truyền description)',
+      guestbook: true
+    },
+    included: [
+      'Tự động ghép danh xưng thông minh không trùng lặp',
+      'Lời mời, câu mở đầu phù hợp theo từng vai vế',
+      'Thiệp mời trang trọng danh xưng'
+    ],
+    excluded: [
+      'KHÔNG CÓ form xác nhận tham dự'
+    ]
+  },
+  {
+    id: 'cus',
+    badge: 'Tùy chỉnh tự do',
+    badgeClass: 'badge-neutral',
+    name: 'Đường dẫn tên tùy chỉnh tự do (Custom Slug)',
+    pathPattern: '/chu-re/cus?name={Tên_Bất_Kỳ}',
+    altPathPattern: '/co-dau/cus?name={Tên_Bất_Kỳ}',
+    demoGroom: '/chu-re/cus?name=John+Doe',
+    demoBride: '/co-dau/cus?name=Đối+Tác+A',
+    description: 'Chỉ hiển thị đúng chuỗi tên truyền vào trong ?name mà không thêm tiền tố danh xưng.',
+    usage: 'Dùng cho biệt danh (nickname), tên tiếng Anh, đối tác công ty, hoặc những trường hợp không muốn gắn đại từ nhân xưng Việt Nam.',
+    components: {
+      opening: true,
+      countdown: true,
+      rsvp: 'Không có (Thiệp mời trang trọng)',
+      qr: 'Có',
+      guestbook: true
+    },
+    included: [
+      'Hiển thị chính xác tên truyền vào query ?name',
+      'Lời mời trang trọng chuẩn',
+      'Quà mừng cưới & Sổ lưu bút'
+    ],
+    excluded: [
+      'KHÔNG CÓ form xác nhận tham dự'
+    ]
+  },
+  {
+    id: 'greeting',
+    badge: 'Trang chào mừng',
+    badgeClass: 'badge-neutral',
+    name: 'Màn hình chào mừng nhanh (Greeting Card)',
+    pathPattern: '/greeting',
+    altPathPattern: '/greeting/{slug}',
+    demoGroom: '/greeting',
+    demoBride: '/greeting/bac',
+    description: 'Giao diện chào mừng đơn giản, tinh gọn với đồng hồ đếm ngược và thông tin 2 địa điểm tổ chức.',
+    usage: 'Dùng khi vào trang chủ / hoặc muốn khách xem nhanh thông tin thời gian, địa điểm cả 2 nhà mà không cần tải toàn bộ nội dung thiệp chi tiết.',
+    components: {
+      opening: true,
+      countdown: true,
+      rsvp: 'Không có',
+      qr: 'Không có',
+      guestbook: 'Không có'
+    },
+    included: [
+      'Màn chào mừng với hình nền cô dâu chú rể',
+      'Đồng hồ đếm ngược tới ngày cưới',
+      'Thẻ sự kiện cả 2 nhà (Nhà trai 28.11 & Nhà gái 29.11)',
+      'Nút chỉ đường xem Google Maps từng nhà',
+      'Trình phát nhạc nền đám cưới'
+    ],
+    excluded: [
+      'KHÔNG CÓ nội dung thiệp dài bên dưới',
+      'KHÔNG CÓ form xác nhận tham dự',
+      'KHÔNG CÓ nút Quà mừng cưới',
+      'KHÔNG CÓ sổ lưu bút'
+    ]
+  },
+  {
+    id: 'default',
+    badge: 'Mặc định',
+    badgeClass: 'badge-neutral',
+    name: 'Trang thiệp cưới mặc định',
+    pathPattern: '/chu-re',
+    altPathPattern: '/co-dau',
+    demoGroom: '/chu-re',
+    demoBride: '/co-dau',
+    description: 'Thiệp cưới đầy đủ thông tin chuẩn của chú rể (ngày 28) hoặc cô dâu (ngày 29).',
+    usage: 'Dùng làm đường dẫn gốc của từng bên khi không chỉ định đối tượng khách cụ thể.',
+    components: {
+      opening: true,
+      countdown: true,
+      rsvp: 'Form mặc định',
+      qr: 'Có',
+      guestbook: true
+    },
+    included: [
+      'Mở thiệp, Đếm ngược, Story, Album ảnh cưới',
+      'Lịch trình & Bản đồ theo nhà tương ứng',
+      'Form RSVP mặc định lưu cục bộ',
+      'Sổ lưu bút & Quà mừng cưới'
+    ],
+    excluded: [
+      'Không cá nhân hóa tên khách'
+    ]
+  }
+];
+
+function renderPathsGuide() {
+  const matrixBody = $('#pathsMatrixBody');
+  const cardsContainer = $('#pathsDetailCards');
+  if (!matrixBody || !cardsContainer) return;
+  const origin = window.location.origin;
+
+  // Render Table Matrix
+  matrixBody.innerHTML = pathGuideItems.map(item => {
+    return `
+      <tr>
+        <td>
+          <div style="font-weight:600; color:#0f172a; margin-bottom:4px;">${item.name}</div>
+          <code style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-size:11px; color:#0369a1; display:inline-block; word-break:break-all;">
+            ${item.pathPattern}
+          </code>
+        </td>
+        <td style="font-size:13px; color:#475569;">
+          <div>${item.description}</div>
+          <span class="badge ${item.badgeClass}" style="margin-top:4px;">${item.badge}</span>
+        </td>
+        <td style="text-align:center;">
+          ${item.components.opening ? '<span style="color:#16a34a; font-weight:700;">✓ Có</span>' : '<span style="color:#94a3b8;">✕ Không</span>'}
+        </td>
+        <td style="text-align:center;">
+          ${item.components.countdown ? '<span style="color:#16a34a; font-weight:700;">✓ Có</span>' : '<span style="color:#94a3b8;">✕ Không</span>'}
+        </td>
+        <td style="text-align:center;">
+          <span style="font-size:12px; font-weight:500; color:#1e293b;">${item.components.rsvp}</span>
+        </td>
+        <td style="text-align:center;">
+          ${item.components.qr.includes('KHÔNG') || item.components.qr.includes('Không')
+            ? '<span style="color:#dc2626; font-weight:700; font-size:12px;">✕ ' + item.components.qr + '</span>'
+            : '<span style="color:#16a34a; font-weight:700; font-size:12px;">✓ ' + item.components.qr + '</span>'}
+        </td>
+        <td style="text-align:center;">
+          ${item.components.guestbook === true
+            ? '<span style="color:#16a34a; font-weight:700;">✓ Có</span>'
+            : (item.components.guestbook === false || item.components.guestbook.includes('Không')
+              ? '<span style="color:#94a3b8;">✕ Không</span>'
+              : '<span style="color:#16a34a; font-weight:700;">✓ Có</span>')}
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  // Render Detailed Cards
+  cardsContainer.innerHTML = pathGuideItems.map((item, idx) => {
+    const groomUrl = `${origin}${item.demoGroom}`;
+    const brideUrl = `${origin}${item.demoBride}`;
+
+    return `
+      <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:18px; box-shadow:0 1px 3px rgba(0,0,0,0.05); display:flex; flex-direction:column; justify-content:space-between;">
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+            <h4 style="margin:0; font-size:15px; color:#0f172a; font-weight:600;">
+              ${idx + 1}. ${item.name}
+            </h4>
+            <span class="badge ${item.badgeClass}">${item.badge}</span>
+          </div>
+
+          <div style="margin-bottom:10px;">
+            <code style="background:#f8fafc; border:1px solid #e2e8f0; padding:4px 8px; border-radius:6px; font-size:12px; color:#0284c7; display:block; word-break:break-all;">
+              ${item.pathPattern}
+            </code>
+            ${item.altPathPattern ? `
+              <code style="background:#f8fafc; border:1px solid #e2e8f0; padding:4px 8px; border-radius:6px; font-size:12px; color:#c026d3; display:block; word-break:break-all; margin-top:4px;">
+                ${item.altPathPattern}
+              </code>
+            ` : ''}
+          </div>
+
+          <p style="font-size:13px; color:#475569; margin:0 0 10px 0; line-height:1.5;">
+            <b>Mô tả:</b> ${item.description}
+          </p>
+
+          <div style="background:#f1f5f9; border-radius:8px; padding:10px 12px; font-size:12px; color:#334155; margin-bottom:12px; line-height:1.5;">
+            <b style="color:#0f172a;">💡 Hướng dẫn cách dùng:</b><br>${item.usage}
+          </div>
+
+          <div style="margin-bottom:10px;">
+            <div style="font-size:12px; font-weight:600; color:#16a34a; margin-bottom:4px;">✓ Thành phần CÓ:</div>
+            <ul style="margin:0 0 8px 18px; padding:0; font-size:12px; color:#334155; line-height:1.5;">
+              ${item.included.map(inc => `<li>${inc}</li>`).join('')}
+            </ul>
+
+            <div style="font-size:12px; font-weight:600; color:#dc2626; margin-bottom:4px;">✕ Thành phần KHÔNG CÓ:</div>
+            <ul style="margin:0 0 8px 18px; padding:0; font-size:12px; color:#64748b; line-height:1.5;">
+              ${item.excluded.map(exc => `<li>${exc}</li>`).join('')}
+            </ul>
+          </div>
+        </div>
+
+        <div style="border-top:1px solid #f1f5f9; padding-top:12px; margin-top:10px;">
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
+              <span style="font-size:11px; color:#64748b; font-weight:600;">👔 Nhà trai:</span>
+              <div style="display:flex; gap:4px;">
+                <a href="${groomUrl}" target="_blank" class="link-btn" style="font-size:11px;">Mở thử ↗</a>
+                <button class="btn btn-sm btn-outline" onclick="copyToClipboard('${groomUrl}', 'Đã copy link Nhà trai!')" style="padding:1px 6px; font-size:10px;">📋 Copy</button>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
+              <span style="font-size:11px; color:#64748b; font-weight:600;">👰 Nhà gái:</span>
+              <div style="display:flex; gap:4px;">
+                <a href="${brideUrl}" target="_blank" class="link-btn" style="font-size:11px; color:#d946ef;">Mở thử ↗</a>
+                <button class="btn btn-sm btn-outline" onclick="copyToClipboard('${brideUrl}', 'Đã copy link Nhà gái!')" style="padding:1px 6px; font-size:10px;">📋 Copy</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
 // Keyframe spin animation
 const styleEl = document.createElement('style');
 styleEl.textContent = `
@@ -1172,3 +1562,4 @@ document.head.appendChild(styleEl);
 // Init load
 loadAllData();
 renderSalutationsTable();
+renderPathsGuide();
