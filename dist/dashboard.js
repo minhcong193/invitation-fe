@@ -1105,7 +1105,8 @@ const salutationItems = [
   { slug: 'gia-dinh-bac', title: 'Gia đình Bác', pronoun: 'hai gia đình chúng tôi', type: 'Gia đình' },
   { slug: 'family', title: 'Thiệp họ hàng (Ngô Hường Tạ Thành)', pronoun: 'gia đình chúng con', type: 'Gia đình' },
   { slug: 'cus?name=Tên+Khách', title: 'Tùy chỉnh tự do (Cus)', pronoun: 'hai gia đình chúng tôi', type: 'Tùy chỉnh' },
-  { slug: 'group-guest?name=Tên+Nhóm', title: 'Nhóm khách có form điền (Group Guest)', pronoun: 'hai gia đình chúng tôi', type: 'Nhóm' }
+  { slug: 'group-guest?name=Tên+Nhóm', title: 'Nhóm khách có form điền (Group Guest)', pronoun: 'hai gia đình chúng tôi', type: 'Nhóm' },
+  { slug: 'friend?name=Tên+Bạn', title: 'Bạn bè có form, ẩn QR (Friend)', pronoun: 'hai gia đình chúng tôi', type: 'Bạn bè' }
 ];
 
 function renderSalutationsTable() {

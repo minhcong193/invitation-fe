@@ -247,9 +247,9 @@ function resolveGuestName(req) {
     return queryName || 'U, Cô, Dì, Chú, Bác, Anh, Em, Cháu';
   }
 
-  // Nếu là route nhóm khách tự điền (/chu-re/group-guest hoặc /co-dau/group-guest)
-  if (pathParts.includes('group-guest')) {
-    return queryName || 'quý khách';
+  // Nếu là route nhóm khách tự điền (/chu-re/group-guest) hoặc route bạn bè (/chu-re/friend)
+  if (pathParts.includes('group-guest') || pathParts.includes('friend')) {
+    return queryName || (pathParts.includes('friend') ? 'Bạn bè' : 'quý khách');
   }
 
   // Nếu là route tùy chỉnh tự do /chu-re/cus hoặc /co-dau/cus -> chỉ hiển thị đúng tên truyền vào
@@ -278,9 +278,9 @@ async function resolveGuestNameAsync(req) {
     return queryName || 'U, Cô, Dì, Chú, Bác, Anh, Em, Cháu';
   }
 
-  // 1b. Nếu là route nhóm khách tự điền (/chu-re/group-guest hoặc /co-dau/group-guest)
-  if (pathParts.includes('group-guest')) {
-    return queryName || 'quý khách';
+  // 1b. Nếu là route nhóm khách tự điền (/chu-re/group-guest) hoặc route bạn bè (/chu-re/friend)
+  if (pathParts.includes('group-guest') || pathParts.includes('friend')) {
+    return queryName || (pathParts.includes('friend') ? 'Bạn bè' : 'quý khách');
   }
 
   // 2. Nếu là route custom (/chu-re/cus)
@@ -491,6 +491,14 @@ function resolveWeddingDate(req) {
     sendHtmlWithOG(req, res, indexFile);
   });
   app.get('/greeting/group-guest', (req, res) => {
+    sendHtmlWithOG(req, res, greetingFile);
+  });
+
+  // Tuyến đường bạn bè có form tự điền, không có button QR (/chu-re/friend hoặc /co-dau/friend)
+  app.get(['/chu-re/friend', '/co-dau/friend', '/friend'], (req, res) => {
+    sendHtmlWithOG(req, res, indexFile);
+  });
+  app.get('/greeting/friend', (req, res) => {
     sendHtmlWithOG(req, res, greetingFile);
   });
 

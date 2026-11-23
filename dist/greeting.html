@@ -217,8 +217,9 @@
         gEl.style.lineHeight = '1.35';
       }
       document.getElementById('greetingCopy').textContent = 'tới chung vui trong ngày trọng đại của hai cháu';
-    } else if (targetKey === 'group-guest' || segments.includes('group-guest')) {
-      const groupName = safeDeepDecode(urlParams.get('name') || urlParams.get('to') || urlParams.get('guest') || 'Quý khách');
+    } else if (targetKey === 'group-guest' || segments.includes('group-guest') || targetKey === 'friend' || segments.includes('friend')) {
+      const isFriend = targetKey === 'friend' || segments.includes('friend');
+      const groupName = safeDeepDecode(urlParams.get('name') || urlParams.get('to') || urlParams.get('guest') || (isFriend ? 'Bạn bè' : 'Quý khách'));
       document.getElementById('greetingEyebrow').textContent = 'Trân trọng kính mời';
       document.getElementById('guestName').textContent = groupName;
       document.getElementById('greetingCopy').textContent = 'tới chung vui trong ngày trọng đại của hai gia đình chúng tôi';

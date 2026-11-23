@@ -205,6 +205,7 @@ let isInviteMode = false;
 let isCustomMode = false;
 let isFamilyMode = false;
 let isGroupGuestMode = false;
+let isFriendMode = false;
 let inviteCode = null;
 let salutationKey = null;
 let familyCode = null;
@@ -215,6 +216,10 @@ if (pathSegments.length > 0) {
 
   if (p0 === 'group-guest' || p1 === 'group-guest') {
     isGroupGuestMode = true;
+    role = (p0 === 'co-dau') ? 'co-dau' : 'chu-re';
+  } else if (p0 === 'friend' || p1 === 'friend') {
+    isGroupGuestMode = true;
+    isFriendMode = true;
     role = (p0 === 'co-dau') ? 'co-dau' : 'chu-re';
   } else if (p0 === 'family' || p1 === 'family') {
     role = 'chu-re';
@@ -1403,8 +1408,8 @@ if (isFamilyMode) {
 }
 
 // =========================================================================
-// 11d. XỬ LÝ LINK NHÓM KHÁCH MỜI (/co-dau/group-guest?name={group} hoặc /chu-re/group-guest?name={group})
-// Hiển thị form sẵn để khách trong group tự điền họ tên, số lượng (mặc định = 1), khách nhà mặc định theo link
+// 11d. XỬ LÝ LINK NHÓM KHÁCH MỜI & BẠN BÈ (/group-guest hoặc /friend)
+// Hiển thị form sẵn để khách tự điền họ tên, số lượng (mặc định = 1), khách nhà mặc định theo link
 // =========================================================================
 if (isGroupGuestMode) {
   // Ẩn các hộp khách mời khác
@@ -1412,7 +1417,16 @@ if (isGroupGuestMode) {
   if (rsvpFamilyBox) rsvpFamilyBox.style.display = 'none';
   if (rsvpSalutationBox) rsvpSalutationBox.style.display = 'none';
 
-  const groupDisplayName = (queryGuestName || 'Quý khách').trim();
+  // Với route /friend: ẩn hoàn toàn nút mở QR mừng cưới
+  if (isFriendMode) {
+    const weddingGiftEl = $('#weddingGift');
+    if (weddingGiftEl) weddingGiftEl.style.display = 'none';
+    const btnOpenGift = $('#btnOpenGiftModal');
+    if (btnOpenGift) btnOpenGift.style.display = 'none';
+  }
+
+  const defaultDisplayName = isFriendMode ? 'Bạn bè' : 'Quý khách';
+  const groupDisplayName = (queryGuestName || defaultDisplayName).trim();
 
   // 1. Màn hình mở thiệp (Opening screen)
   const guestEl = $('#guestName');
@@ -1437,7 +1451,9 @@ if (isGroupGuestMode) {
   if (invLead) {
     invLead.textContent = queryGuestName
       ? `Sự hiện diện của các thành viên trong ${queryGuestName} là niềm vinh hạnh to lớn của hai gia đình chúng tôi trong ngày trọng đại này!`
-      : 'Sự hiện diện của quý khách là niềm vinh hạnh to lớn của hai gia đình chúng tôi trong ngày trọng đại này.';
+      : (isFriendMode
+        ? 'Sự hiện diện của bạn là niềm vinh hạnh to lớn của hai gia đình chúng tôi trong ngày trọng đại này.'
+        : 'Sự hiện diện của quý khách là niềm vinh hạnh to lớn của hai gia đình chúng tôi trong ngày trọng đại này.');
   }
 
   // 3. Khối RSVP: Hiển thị form sẵn để khách tự điền
